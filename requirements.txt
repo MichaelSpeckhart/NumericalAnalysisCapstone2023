@@ -1,0 +1,15 @@
+vim
+git
+man
+curl
+build-essential
+screen
+gdb
+libssl-dev
+psmisc
+python3
+python3-pyqt5
+python3-pandas
+python3-numpy
+python3-matplotlib 
+python3-pybind11
