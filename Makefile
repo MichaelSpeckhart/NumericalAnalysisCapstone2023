@@ -3,13 +3,13 @@
 BITS = 64
 
 # Output directory
-ODIR  = obj64
+ODIR  = build
 tmp  := $(shell mkdir -p $(ODIR))
 
 # Basic compiler configuration and flags
 CXX      = g++
-CXXFLAGS = -MMD -O3 -Wall -shared -std=c++17 -fopenmp -fPIC $(python3 -m pybind11 --includes) $(CXXEXTRA)$(python3-config --extension-suffix) -I/usr/include/python3.10 
-LDFLAGS	 = -m$(BITS) -lpthread -lrt 
+CXXFLAGS = -MMD -O3 -Wall -shared -std=c++17 -fopenmp -fPIC $(python3 -m pybind11 --includes) $(CXXEXTRA)$(python3-config --extension-suffix) -I /usr/include/python3.8/
+LDFLAGS	 = -m$(BITS) -lpthread -lrt -lpython3.8 -lcrypt -ldl -lutil -lm -lm
 
 # The basenames of the c++ files that this program uses
 CXXFILES = functions
