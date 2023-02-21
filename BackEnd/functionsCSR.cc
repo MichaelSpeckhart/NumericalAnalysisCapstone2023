@@ -9,11 +9,15 @@ using namespace std;
 
 template<typename T>
 	class CSRMatrix{
+        struct {
+            int col;
+            T value;
+        }colValStruct;
         public:
         int numRows, numColumns;
-        vector<pair*> rowPointersVector;
+        vector<colValStruct*> rowPointersVector;
         //fist value is col_ind and the second value is the value
-        vector<pair<int,T>> columnValueVector;
+        vector<colValStruct> columnValueVector;
     };
     //loadfile
     //savefile
@@ -25,18 +29,9 @@ template<typename T>
         if(m1.numColumns < col){
             //throw error
         }
-        //if the value being looked for is in the last row
-        if(m1.numRows == row-1){
-            for(auto it = m1.rowPointersVector.at(row); it != m1.columnValueVector.end();it++){
-                if(it.first == col){
-                    return it.second;
-                }
-                return -1;
-            }
-        }
         for(auto it = m1.rowPointersVector.at(row); it != m1.rowPointersVector.at(row+1);it++){
-            if(it.first == col){
-                return it.second;
+            if(it->col == col){
+                return it->colValStruct.value;
             }
         }
         return -1;
@@ -54,6 +49,8 @@ template<typename T>
         for(size_t i =0; i < m2.rowPointersVector.size();i++){
 
         }
+
+        return m1;
 
     }
     //TODO: Multiply and transpose
