@@ -115,4 +115,70 @@ template<typename T>
         return returnMatrix;
     }
 
-    //TODO: Multiply and transpose
+template<typename T>
+CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2){
+    if(m1.numColumns!= m2.numRows){
+        //throw error
+    }
+    CSRMatrix<T> returnMatrix;
+    returnMatrix.numRows = m1.numRows;
+    returnMatrix.numColumns = m2.numColumns;
+    returnMatrix.row_ptr.push_back(0);
+
+    for (size_t i = 0; i < m1.numRows; i++) {
+        for (size_t j = 0; j < m2.numColumns; j++) {
+            T dotProduct = 0;
+            size_t a = m1.row_ptr.at(i);
+            size_t b = m1.row_ptr.at(i+1);
+            for (size_t k = m2.row_ptr.at(j); k < m2.row_ptr.at(j+1); k++){
+                size_t col = m2.col_ind.at(k);
+                while(a < b && m1.col_ind.at(a) < col){
+                    a++;
+                }
+                if(a == b){
+                    break;
+                }
+                if(m1.col_ind.at(a) == col){
+                    dotProduct += m1.val.at(a) * m2.val.at(k);
+                }
+            }
+            if(dotProduct != 0){
+                returnMatrix.val.push_back(dotProduct);
+                returnMatrix.col_ind.push_back(j);
+            }
+        }
+        returnMatrix.row_ptr.push_back(returnMatrix.val.size());
+    }
+    return returnMatrix;
+}
+
+
+
+// template<typename T>
+// CSRMatrix<T> transpose_matrixCSR(CSRMatrix<T> m){
+//     CSRMatrix<T> returnMatrix;
+//     returnMatrix.numRows = m.numColumns;
+//     returnMatrix.numColumns = m.numRows;
+//     returnMatrix.row_ptr.push_back(0);
+
+//     vector<vector<size_t>> transposedData(m.numColumns);
+//     vector<vector<T>> transposedValues(m.numColumns);
+
+//     for (size_t i = 0; i < m.numRows; i++) {
+//         for (size_t j = m.row_ptr.at(i); j < m.row_ptr.at(i+1); j++) {
+//             transposedData.at(m.col_ind.at(j)).push_back(i);
+//             transposedValues.at(m.col_ind.at(j)).push_back(m.val.at(j));
+//         }
+//     }
+
+//     for (size_t i = 0; i < transposedData.size(); i++) {
+//         //sort the column indices
+//         sort(transposedData.at(i).begin(), transposedData.at(i).end());
+//         for (size_t j = 0; j < transposedData.at(i).size(); j++) {
+//             returnMatrix.val.push_back(transposedValues.at(i).at(j));
+//             returnMatrix.col_ind.push_back(i);
+//         }
+//         returnMatrix.row_ptr.push_back(returnMatrix.val.size());
+//     }
+//     return returnMatrix;
+// }
