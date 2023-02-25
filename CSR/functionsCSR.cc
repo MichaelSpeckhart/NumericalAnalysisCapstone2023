@@ -65,6 +65,16 @@ template<typename T>
     }
 
 template<typename T>
+    void print_matrixCSR(CSRMatrix<T> m1){
+        for (size_t i = 0; i < m1.numRows; i++) {
+            for (size_t j = 0; j < m1.numColumns; j++) {
+                cout << get_matrixCSR(m1, i, j) << " ";
+            }
+            cout << endl;
+        }
+    }
+
+template<typename T>
     CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2){
         if(m1.numRows!= m2.numRows){
             //throw error
@@ -93,8 +103,11 @@ template<typename T>
                     a2++;
                 }
                 else if (m1.col_ind.at(a1) == m2.col_ind.at(a2)) {
-                    returnMatrix.val.push_back(m1.val.at(a1)+m2.val.at(a2));
-                    returnMatrix.col_ind.push_back(m1.col_ind.at(a1));
+                    T value = m1.val.at(a1) + m2.val.at(a2);
+                    if (value != 0) {
+                        returnMatrix.val.push_back(value);
+                        returnMatrix.col_ind.push_back(m1.col_ind.at(a1));
+                    }
                     a1++;
                     a2++;
                 }
@@ -116,7 +129,7 @@ template<typename T>
 
     //TODO: Multiply and transpose
 template<typename T>
-    CSRMatrix<T> transpose(CSRMatrix<T> m1){
+    CSRMatrix<T> transpose_matrixCSR(CSRMatrix<T> m1){
         CSRMatrix<T> returnMatrix;
         returnMatrix.numRows = m1.numColumns;
         returnMatrix.numColumns = m1.numRows;
@@ -144,55 +157,81 @@ template<typename T>
         return returnMatrix;
     }
 
+template<typename T>
+    CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2) {
+        if(m1.numColumns!= m2.numRows){
+            //throw error
+        }
+        CSRMatrix<T> returnMatrix;
+        returnMatrix.numRows = m1.numRows;
+        returnMatrix.numColumns = m2.numColumns;
+        returnMatrix.row_ptr.push_back(0);
+        CSRMatrix<T> m2t = transpose_matrixCSR(m2);
+        for (size_t i = 0; i < m1.numRows; i++) {
+            for (size_t j = 0; j < m2t.numRows; j++) {
+                T sum = 0;
+                size_t a1 = m1.row_ptr.at(i);
+                size_t b1 = m1.row_ptr.at(i+1);
+                size_t a2 = m2t.row_ptr.at(j);
+                size_t b2 = m2t.row_ptr.at(j+1);
+                while(a1 < b1 && a2 < b2){
+                    if (m1.col_ind.at(a1) < m2t.col_ind.at(a2)) {
+                        a1++;
+                    } else if (m1.col_ind.at(a1) > m2t.col_ind.at(a2)) {
+                        a2++;
+                    }
+                    else if (m1.col_ind.at(a1) == m2t.col_ind.at(a2)) {
+                        sum += m1.val.at(a1)*m2t.val.at(a2);
+                        a1++;
+                        a2++;
+                    }
+                }
+                if (sum != 0) {
+                    returnMatrix.val.push_back(sum);
+                    returnMatrix.col_ind.push_back(j);
+                }
+            }
+            returnMatrix.row_ptr.push_back(returnMatrix.val.size());
+        }
+        return returnMatrix;
+    }
+
 int main() {
-    vector<vector<int> > array = vector<vector<int> >(4, vector<int>(3));
+    vector<vector<int> > array = vector<vector<int> >(3, vector<int>(3));
     array[0][0] = 1;
-    // array[0][1] = 2;
-    // array[0][2] = 3;
+    array[0][1] = 2;
+    array[0][2] = 3;
     array[1][0] = 4;
     array[1][1] = 5;
     array[1][2] = 6;
-    // array[2][0] = 7;
+    array[2][0] = 7;
     array[2][1] = 8;
     array[2][2] = 9;
-    array[3][0] = 10;
-    array[3][1] = 11;
-    array[3][2] = 12;
+    // array[3][0] = 10;
+    // array[3][1] = 11;
+    // array[3][2] = 12;
 
-    vector<vector<int> > array2 = vector<vector<int> >(4, vector<int>(3));
-    // array2[0][0] = 1;
-    array2[0][1] = 2;
-    array2[0][2] = 3;
-    // array2[1][0] = 4;
+    vector<vector<int> > array2 = vector<vector<int> >(3, vector<int>(3));
+    array2[0][0] = 9;
+    array2[0][1] = -4;
+    array2[0][2] = 7;
+    array2[1][0] = -6;
     array2[1][1] = -5;
-    // array2[1][2] = 6;
-    array2[2][0] = 7;
-    array2[2][1] = 8;
-    // array2[2][2] = 9;
+    array2[1][2] = 4;
+    array2[2][0] = 3;
+    array2[2][1] = 2;
+    array2[2][2] = 1;
     // array2[3][0] = 10;
-    array2[3][1] = 11;
-    array2[3][2] = 12;
+    // array2[3][1] = 11;
+    // array2[3][2] = 12;
 
-    CSRMatrix<int> m1 = from_vector<int>(array);
-    CSRMatrix<int> m2 = from_vector<int>(array2);
-    CSRMatrix<int> m3 = add_matrixCSR<int>(m1, m2);
-    // m3 = transpose(m3);
-    m3 = transpose(m3);
-    cout << get_matrixCSR(m3, 0, 0) << endl;
-    cout << get_matrixCSR(m3, 0, 1) << endl;
-    cout << get_matrixCSR(m3, 0, 2) << endl;
-    cout << get_matrixCSR(m3, 0, 3) << endl;
-    cout << get_matrixCSR(m3, 1, 0) << endl;
-    cout << get_matrixCSR(m3, 1, 1) << endl;
-    cout << get_matrixCSR(m3, 1, 2) << endl;
-    cout << get_matrixCSR(m3, 1, 3) << endl;
-    cout << get_matrixCSR(m3, 2, 0) << endl;
-    cout << get_matrixCSR(m3, 2, 1) << endl;
-    cout << get_matrixCSR(m3, 2, 2) << endl;
-    cout << get_matrixCSR(m3, 2, 3) << endl;
-    // cout << get_matrixCSR(m3, 3, 0) << endl;
-    // cout << get_matrixCSR(m3, 3, 1) << endl;
-    // cout << get_matrixCSR(m3, 3, 2) << endl;
+    CSRMatrix<int> m1 = from_vector(array);
+    CSRMatrix<int> m2 = from_vector(array2);
+    CSRMatrix<int> m3 = add_matrixCSR(m1, transpose_matrixCSR(m2));
+    print_matrixCSR(m3);
+    m3 = transpose_matrixCSR(m3);
+    // m3 = transpose_matrixCSR(m3);
+    print_matrixCSR(m3);
 
     return 0;
 }
