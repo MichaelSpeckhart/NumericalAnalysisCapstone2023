@@ -2,10 +2,14 @@
 #include "doctest.h"
 #include "../functionsCSR.cc"
 //Basic Unit tests for CSR add, multiply, and transpose
+//Use -d to time the tests
 
 /*
 Takes a CSRMatrix and a dense matrix and makes sure they have the same elements
 */
+/// @brief Ensure compressed sparse row matrix is the same as expected dense matrix
+/// @param mResult The CSR matrix to compare to
+/// @param mCheck The dense matrix to compare to
 void CHECKCSR(CSRMatrix<int> mResult, vector<vector<int> > mCheck){
     CHECK(mResult.numRows == mCheck.size());
     for(size_t i = 0; i < mResult.numRows;i++){
@@ -50,19 +54,6 @@ TEST_CASE("CSR Add Exceptions") {
     CHECK_THROWS_WITH_AS(add_matrixCSR<int>(m1, m3),"The number of columns in the first matrix must match the number of columns in the second matrix.",std::exception);
 }
 
-TEST_CASE("testing CSR multiply") {
-    vector<vector<int> > array = {{1,0,0},{4,5,6},{0,8,9}};
-    vector<vector<int> > array2 = {{0,2,3},{0,-5,0},{7,8,0}};
-
-    CSRMatrix<int> m1 = from_vector<int>(array);
-    CSRMatrix<int> m2 = from_vector<int>(array2);
-
-    CSRMatrix<int> m3 = multiply_matrixCSR<int>(m1, m2);
-    vector<vector<int> > multiplyResultExpected = {{0,2,3},{42,31,12},{63,32,0}};
-    //check the multiply
-    CHECKCSR(m3,multiplyResultExpected);
-}
-
 TEST_CASE("testing CSR transpose") {
     vector<vector<int> > array = {{1,0,0},{4,5,6},{0,8,9}};
 
@@ -73,4 +64,26 @@ TEST_CASE("testing CSR transpose") {
     vector<vector<int> > transposeResultExpected = {{1,4,0},{0,5,8},{0,6,9}};
     //check the transpose
     CHECKCSR(m2,transposeResultExpected);
+}
+
+TEST_CASE("testing CSR multiply") {
+    vector<vector<int> > array = {{1,0,0},{4,5,6},{0,8,9}};
+    vector<vector<int> > array2 = {{0,2,3},{0,-5,0},{7,8,0}};
+
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    CSRMatrix<int> m2 = from_vector<int>(array2);
+    CSRMatrix<int> m3 = multiply_matrixCSR<int>(m1, m2);
+    vector<vector<int> > multiplyResultExpected = {{0,2,3},{42,31,12},{63,32,0}};
+    //check the multiply
+    CHECKCSR(m3,multiplyResultExpected);
+}
+
+TEST_CASE("CSR multiply Exceptions") {
+    vector<vector<int> > array = {{1,0,0},{4,5,6},{0,8,9}};
+    vector<vector<int> > array2 = {{0,2},{0,-5}};
+
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    CSRMatrix<int> m2 = from_vector<int>(array2);
+
+    CHECK_THROWS_WITH_AS(multiply_matrixCSR<int>(m1, m2),"The number of columns in the first matrix must match the number of rows in the second matrix.",std::exception);
 }
