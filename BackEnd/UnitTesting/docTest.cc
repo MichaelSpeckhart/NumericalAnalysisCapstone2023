@@ -5,20 +5,9 @@
 
 
 TEST_CASE("testing CSR") {
-    vector<vector<int> > array = vector<vector<int> >(3, vector<int>(3));
-    array[0][0] = 1;
-    array[1][0] = 4;
-    array[1][1] = 5;
-    array[1][2] = 6;
-    array[2][1] = 8;
-    array[2][2] = 9;
+    vector<vector<int> > array = {{1,0,0},{4,5,6},{0,8,9}};
 
-    vector<vector<int> > array2 = vector<vector<int> >(3, vector<int>(3));
-    array2[0][1] = 2;
-    array2[0][2] = 3;
-    array2[1][1] = -5;
-    array2[2][0] = 7;
-    array2[2][1] = 8;
+    vector<vector<int> > array2 = {{0,2,3},{0,-5,0},{7,8,0}};
 
     CSRMatrix<int> m1 = from_vector<int>(array);
     //check m1
