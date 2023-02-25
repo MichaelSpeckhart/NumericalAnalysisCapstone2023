@@ -117,40 +117,40 @@ template<typename T>
 
     //TODO: Multiply and transpose
 
-int main() {
-    vector<vector<int> > array = vector<vector<int> >(3, vector<int>(3));
-    array[0][0] = 1;
-    // array[0][1] = 2;
-    // array[0][2] = 3;
-    array[1][0] = 4;
-    array[1][1] = 5;
-    array[1][2] = 6;
-    // array[2][0] = 7;
-    array[2][1] = 8;
-    array[2][2] = 9;
+// int main() {
+//     vector<vector<int> > array = vector<vector<int> >(3, vector<int>(3));
+//     array[0][0] = 1;
+//     // array[0][1] = 2;
+//     // array[0][2] = 3;
+//     array[1][0] = 4;
+//     array[1][1] = 5;
+//     array[1][2] = 6;
+//     // array[2][0] = 7;
+//     array[2][1] = 8;
+//     array[2][2] = 9;
 
-    vector<vector<int> > array2 = vector<vector<int> >(3, vector<int>(3));
-    // array2[0][0] = 1;
-    array2[0][1] = 2;
-    array2[0][2] = 3;
-    // array2[1][0] = 4;
-    array2[1][1] = -5;
-    // array2[1][2] = 6;
-    array2[2][0] = 7;
-    array2[2][1] = 8;
-    // array2[2][2] = 9;
+//     vector<vector<int> > array2 = vector<vector<int> >(3, vector<int>(3));
+//     // array2[0][0] = 1;
+//     array2[0][1] = 2;
+//     array2[0][2] = 3;
+//     // array2[1][0] = 4;
+//     array2[1][1] = -5;
+//     // array2[1][2] = 6;
+//     array2[2][0] = 7;
+//     array2[2][1] = 8;
+//     // array2[2][2] = 9;
 
-    CSRMatrix<int> m1 = from_vector<int>(array);
-    CSRMatrix<int> m2 = from_vector<int>(array2);
-    CSRMatrix<int> m3 = add_matrixCSR<int>(m1, m2);
-    cout << get_matrixCSR(m3, 0, 0) << endl;
-    cout << get_matrixCSR(m3, 0, 1) << endl;
-    cout << get_matrixCSR(m3, 0, 2) << endl;
-    cout << get_matrixCSR(m3, 1, 0) << endl;
-    cout << get_matrixCSR(m3, 1, 1) << endl;
-    cout << get_matrixCSR(m3, 1, 2) << endl;
-    cout << get_matrixCSR(m3, 2, 0) << endl;
-    cout << get_matrixCSR(m3, 2, 1) << endl;
-    cout << get_matrixCSR(m3, 2, 2) << endl;
-    return 0;
-}
+//     CSRMatrix<int> m1 = from_vector<int>(array);
+//     CSRMatrix<int> m2 = from_vector<int>(array2);
+//     CSRMatrix<int> m3 = add_matrixCSR<int>(m1, m2);
+//     cout << get_matrixCSR(m3, 0, 0) << endl;
+//     cout << get_matrixCSR(m3, 0, 1) << endl;
+//     cout << get_matrixCSR(m3, 0, 2) << endl;
+//     cout << get_matrixCSR(m3, 1, 0) << endl;
+//     cout << get_matrixCSR(m3, 1, 1) << endl;
+//     cout << get_matrixCSR(m3, 1, 2) << endl;
+//     cout << get_matrixCSR(m3, 2, 0) << endl;
+//     cout << get_matrixCSR(m3, 2, 1) << endl;
+//     cout << get_matrixCSR(m3, 2, 2) << endl;
+//     return 0;
+// }

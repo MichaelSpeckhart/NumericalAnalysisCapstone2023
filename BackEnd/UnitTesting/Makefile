@@ -12,7 +12,7 @@ CXXFLAGS = -MMD -O3 -Wall -shared -std=c++17 -fopenmp -fPIC $(python3 -m pybind1
 LDFLAGS	 = -m$(BITS) -lpthread -lrt -lpython3.10 -lcrypt -ldl -lutil -lm -lm
 
 # The basenames of the c++ files that this program uses
-CXXFILES = doctest 
+CXXFILES = doctest ../functionsCSR
 
 # The executable we will build
 TARGET = $(ODIR)/unitTests
