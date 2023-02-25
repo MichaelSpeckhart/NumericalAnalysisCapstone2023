@@ -142,7 +142,7 @@ template<typename T>
 /// @brief Transposes a compressed sparse row(CSR) matrix
 /// @tparam T The type of the matrix
 /// @param m1 The CSR matrix to transpose
-/// @return m2 transposed
+/// @return m1 transposed
 template<typename T>
     CSRMatrix<T> transpose_matrixCSR(CSRMatrix<T> m1){
         CSRMatrix<T> returnMatrix;

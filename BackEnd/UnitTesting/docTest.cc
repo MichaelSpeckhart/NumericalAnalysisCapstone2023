@@ -11,7 +11,7 @@ void CHECKCSR(CSRMatrix<int> mResult, vector<vector<int> > mCheck){
     for(size_t i = 0; i < mResult.numRows;i++){
         CHECK(mResult.numColumns == mCheck[i].size());
         for(size_t j = 0; j< mResult.numColumns;j++){
-             CHECK(get_matrixCSR(mResult, i, j) == mCheck[i][j]);
+             CHECK_MESSAGE(get_matrixCSR(mResult, i, j) == mCheck[i][j],"i = "<< i <<", j = "<<j);
         }
     }
 }
@@ -33,6 +33,21 @@ TEST_CASE("testing CSR Add") {
     vector<vector<int> > addResultExpected = {{1,2,3},{4,0,6},{7,16,9}};
     //check the addition
     CHECKCSR(m3,addResultExpected);
+}
+
+TEST_CASE("CSR Add Exceptions") {
+    vector<vector<int> > array = {{1,0,0},{4,5,6},{0,8,9}};
+    vector<vector<int> > array2 = {{0,2,3},{0,-5,0}};
+
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    CSRMatrix<int> m2 = from_vector<int>(array2);
+
+    CHECK_THROWS_WITH_AS(add_matrixCSR<int>(m1, m2),"The number of rows in the first matrix must match the number of rows in the second matrix.",std::exception);
+
+     vector<vector<int> > array3 = {{1,0},{4,5},{0,8}};
+     CSRMatrix<int> m3 = from_vector<int>(array3);
+
+    CHECK_THROWS_WITH_AS(add_matrixCSR<int>(m1, m3),"The number of columns in the first matrix must match the number of columns in the second matrix.",std::exception);
 }
 
 TEST_CASE("testing CSR multiply") {
