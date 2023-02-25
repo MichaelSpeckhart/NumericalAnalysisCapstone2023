@@ -1,9 +1,11 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 #include "../functionsCSR.cc"
-//This file just defines are Doctest config
+//Basic Unit tests for CSR add, multiply, and transpose
 
-
+/*
+Takes a CSRMatrix and a dense matrix and makes sure they have the same elements
+*/
 void CHECKCSR(CSRMatrix<int> mResult, vector<vector<int> > mCheck){
     CHECK(mResult.numRows == mCheck.size());
     for(size_t i = 0; i < mResult.numRows;i++){
