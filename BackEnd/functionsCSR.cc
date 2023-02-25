@@ -22,15 +22,23 @@ template<typename T>
         vector<size_t> col_ind;
         vector<size_t> row_ptr;
     };
-    //loadfile
-    //savefile
+    //TODO loadfile
+    //TODO savefile
+
+/// @brief Gets a value from the compressed sparse row(CSR) matrix
+/// @exception The search row and col must be less than dimensions of m1
+/// @tparam T The type of the matrix
+/// @param m1 The CSR matrix to get the value from
+/// @param row The row of the value to get
+/// @param col The column of the value to get
+/// @return That value stored at row,column
 template<typename T>
     T get_matrixCSR(CSRMatrix<T> m1, size_t row, size_t col){
         if(m1.numRows <= row){
-            //throw error
+             throw std::invalid_argument("The row being searched for is greater than the dimensions of the matrix.");
         }
         if(m1.numColumns <= col){
-            //throw error
+            throw std::invalid_argument("The column being searched for is greater than the dimensions of the matrix.");
         }
         for (size_t i = m1.row_ptr.at(row); i < m1.row_ptr.at(row+1); i++){
             if(m1.col_ind.at(i) == col){
@@ -39,7 +47,10 @@ template<typename T>
         }
         return 0;
     }
-
+/// @brief Converts a dense matrix to a compressed sparse row(CSR) matrix
+/// @tparam T The type of the matrix
+/// @param array The dense matrix to convert
+/// @return The CSR matrix
 template<typename T>
     CSRMatrix<T> from_vector(vector<vector<T> > &array){
         CSRMatrix<T> returnMatrix;
@@ -57,7 +68,9 @@ template<typename T>
         }
         return returnMatrix;
     }
-
+/// @brief Prints out a compressed sparse row(CSR) matrix to cout
+/// @tparam T The type of the matrix
+/// @param m1 The matrix too print out
 template<typename T>
     void print_matrixCSR(CSRMatrix<T> m1){
         for (size_t i = 0; i < m1.numRows; i++) {
@@ -67,7 +80,12 @@ template<typename T>
             cout << endl;
         }
     }
-
+/// @brief Adds two compressed spares row(CSR) matrixes together
+/// @exception The two matrixes must have the same dimensions
+/// @tparam T The type of both matrixes
+/// @param m1 The first matrix too add
+/// @param m2 The second matrix too add
+/// @return m1+m2
 template<typename T>
     CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2){
         if(m1.numRows!= m2.numRows){
@@ -121,6 +139,10 @@ template<typename T>
         return returnMatrix;
     }
 
+/// @brief Transposes a compressed sparse row(CSR) matrix
+/// @tparam T The type of the matrix
+/// @param m1 The CSR matrix to transpose
+/// @return m2 transposed
 template<typename T>
     CSRMatrix<T> transpose_matrixCSR(CSRMatrix<T> m1){
         CSRMatrix<T> returnMatrix;
@@ -150,6 +172,12 @@ template<typename T>
         return returnMatrix;
     }
 
+/// @brief Multiplies two compressed sparse row(CSR) matrixes
+/// @exception The number of columns in m1 must equal the number of rows in m2
+/// @tparam T The type of the matrixes
+/// @param m1 The first CSR matrix to multiply
+/// @param m2 The second CSR matrix to multiply
+/// @return The dot product of m1 and m2
 template<typename T>
     CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2) {
         if(m1.numColumns!= m2.numRows){
