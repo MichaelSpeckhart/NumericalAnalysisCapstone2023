@@ -46,7 +46,6 @@ template<typename T>
         return 0;
     }
 
-
 template<typename T>
     CSRMatrix<T> from_vector(vector<vector<T> > &array){
         CSRMatrix<T> returnMatrix;
@@ -116,9 +115,37 @@ template<typename T>
     }
 
     //TODO: Multiply and transpose
+template<typename T>
+    CSRMatrix<T> transpose(CSRMatrix<T> m1){
+        CSRMatrix<T> returnMatrix;
+        returnMatrix.numRows = m1.numColumns;
+        returnMatrix.numColumns = m1.numRows;
+        returnMatrix.row_ptr.push_back(0);
+        vector<size_t> row_count(m1.numColumns, 0);
+        returnMatrix.val = vector<T>(m1.val.size());
+        returnMatrix.col_ind = vector<size_t>(m1.col_ind.size());
+        for (size_t i = 0; i < m1.numRows; i++) {
+            for (size_t j = m1.row_ptr.at(i); j < m1.row_ptr.at(i+1); j++) {
+                row_count.at(m1.col_ind.at(j))++;
+            }
+        }
+        for (size_t i = 0; i < m1.numColumns; i++) {
+            returnMatrix.row_ptr.push_back(returnMatrix.row_ptr.at(i)+row_count.at(i));
+        }
+        row_count = vector<size_t>(m1.numColumns, 0);
+        for (size_t i = 0; i < m1.numRows; i++) {
+            for (size_t j = m1.row_ptr.at(i); j < m1.row_ptr.at(i+1); j++) {
+                size_t index = returnMatrix.row_ptr.at(m1.col_ind.at(j)) + row_count.at(m1.col_ind.at(j));
+                returnMatrix.val.at(index) = m1.val.at(j);
+                returnMatrix.col_ind.at(index) = i;
+                row_count.at(m1.col_ind.at(j))++;
+            }
+        }
+        return returnMatrix;
+    }
 
 int main() {
-    vector<vector<int> > array = vector<vector<int> >(3, vector<int>(3));
+    vector<vector<int> > array = vector<vector<int> >(4, vector<int>(3));
     array[0][0] = 1;
     // array[0][1] = 2;
     // array[0][2] = 3;
@@ -128,8 +155,11 @@ int main() {
     // array[2][0] = 7;
     array[2][1] = 8;
     array[2][2] = 9;
+    array[3][0] = 10;
+    array[3][1] = 11;
+    array[3][2] = 12;
 
-    vector<vector<int> > array2 = vector<vector<int> >(3, vector<int>(3));
+    vector<vector<int> > array2 = vector<vector<int> >(4, vector<int>(3));
     // array2[0][0] = 1;
     array2[0][1] = 2;
     array2[0][2] = 3;
@@ -139,18 +169,30 @@ int main() {
     array2[2][0] = 7;
     array2[2][1] = 8;
     // array2[2][2] = 9;
+    // array2[3][0] = 10;
+    array2[3][1] = 11;
+    array2[3][2] = 12;
 
     CSRMatrix<int> m1 = from_vector<int>(array);
     CSRMatrix<int> m2 = from_vector<int>(array2);
     CSRMatrix<int> m3 = add_matrixCSR<int>(m1, m2);
+    // m3 = transpose(m3);
+    m3 = transpose(m3);
     cout << get_matrixCSR(m3, 0, 0) << endl;
     cout << get_matrixCSR(m3, 0, 1) << endl;
     cout << get_matrixCSR(m3, 0, 2) << endl;
+    cout << get_matrixCSR(m3, 0, 3) << endl;
     cout << get_matrixCSR(m3, 1, 0) << endl;
     cout << get_matrixCSR(m3, 1, 1) << endl;
     cout << get_matrixCSR(m3, 1, 2) << endl;
+    cout << get_matrixCSR(m3, 1, 3) << endl;
     cout << get_matrixCSR(m3, 2, 0) << endl;
     cout << get_matrixCSR(m3, 2, 1) << endl;
     cout << get_matrixCSR(m3, 2, 2) << endl;
+    cout << get_matrixCSR(m3, 2, 3) << endl;
+    // cout << get_matrixCSR(m3, 3, 0) << endl;
+    // cout << get_matrixCSR(m3, 3, 1) << endl;
+    // cout << get_matrixCSR(m3, 3, 2) << endl;
+
     return 0;
 }
