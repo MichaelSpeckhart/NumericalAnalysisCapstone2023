@@ -78,6 +78,54 @@ TEST_CASE("testing CSR multiply") {
     CHECKCSR(m3,multiplyResultExpected);
 }
 
+TEST_CASE("CSR multiply zero matrix") {
+    vector<vector<int> > array = {{0,0,0,0},{0,0,0,0},{0,0,0,0}};
+    vector<vector<int> > array2 = {{0,1},{0,-5},{7,8},{56,76}};
+
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    CSRMatrix<int> m2 = from_vector<int>(array2);
+    CSRMatrix<int> m3 = multiply_matrixCSR<int>(m1, m2);
+    vector<vector<int> > multiplyResultExpected = {{0,0},{0,0},{0,0}};
+    //check the multiply
+    CHECKCSR(m3,multiplyResultExpected);
+}
+
+TEST_CASE("CSR multiply zero row first matrix") {
+    vector<vector<int> > array = {{0,5,0,3},{0,0,0,0},{0,7,90,0}};
+    vector<vector<int> > array2 = {{0,1},{0,-5},{7,8},{56,76}};
+
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    CSRMatrix<int> m2 = from_vector<int>(array2);
+    CSRMatrix<int> m3 = multiply_matrixCSR<int>(m1, m2);
+    vector<vector<int> > multiplyResultExpected = {{168,203},{0,0},{630,685}};
+    //check the multiply
+    CHECKCSR(m3,multiplyResultExpected);
+}
+
+TEST_CASE("CSR multiply zero row second matrix") {
+    vector<vector<int> > array = {{0,5,0,3},{0,6,7,0},{0,7,90,0}};
+    vector<vector<int> > array2 = {{0,0},{0,-5},{0,0},{56,76}};
+
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    CSRMatrix<int> m2 = from_vector<int>(array2);
+    CSRMatrix<int> m3 = multiply_matrixCSR<int>(m1, m2);
+    vector<vector<int> > multiplyResultExpected = {{168,203},{0,-30},{0,-35}};
+    //check the multiply
+    CHECKCSR(m3,multiplyResultExpected);
+}
+
+TEST_CASE("CSR multiply zero row both matrix") {
+    vector<vector<int> > array = {{0,5,0,3},{0,0,0,0},{0,7,90,0}};
+    vector<vector<int> > array2 = {{0,0},{0,-5},{0,0},{56,76}};
+
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    CSRMatrix<int> m2 = from_vector<int>(array2);
+    CSRMatrix<int> m3 = multiply_matrixCSR<int>(m1, m2);
+    vector<vector<int> > multiplyResultExpected = {{168,203},{0,0},{0,-35}};
+    //check the multiply
+    CHECKCSR(m3,multiplyResultExpected);
+}
+
 TEST_CASE("CSR multiply Exceptions") {
     vector<vector<int> > array = {{1,0,0},{4,5,6},{0,8,9}};
     vector<vector<int> > array2 = {{0,2},{0,-5}};
