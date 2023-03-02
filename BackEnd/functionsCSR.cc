@@ -143,6 +143,16 @@ template<typename T>
 /// @tparam T The type of the matrix
 /// @param m1 The CSR matrix to transpose
 /// @return m1 transposed
+///We first check make a vector row_count with 0s. This will keep track of how many elements 
+///are at each column (or each row for the transposed matrix). We compute this by iterating through 
+///the elements and adding the count at the respective row. Then, each element row_ptr[i] of the new 
+///matrix row_ptr is simply the sum of the row_count up until i. Later on, we clear up row_count 
+///back to 0s and again iterate through the elements and update row_count accordingly. In this case, 
+///for an element in row i and overall index j in the original matrix we can compute its new overall 
+///index in the transposed matrix as follows: Take the number of elements in the columns behind it: 
+/// returnMatrix.row_ptr[m1.col_ind[j]]. Sum it with the elements in this column so far: 
+///row_count[m1.col_ind[j]]. And obtain the index. Then add this element to such index in the new 
+///matrix: returnMatrix.val[index]=m1.val[j] as well as its column index: returnMatrix.col_ind[index]=i.
 template<typename T>
     CSRMatrix<T> transpose_matrixCSR(CSRMatrix<T> m1){
         CSRMatrix<T> returnMatrix;
