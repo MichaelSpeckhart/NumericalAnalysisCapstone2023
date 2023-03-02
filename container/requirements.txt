@@ -10,3 +10,4 @@ psmisc
 python3
 python3-pip
 python3-opencv
+pybind11-dev
