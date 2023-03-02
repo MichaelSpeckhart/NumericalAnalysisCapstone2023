@@ -1,0 +1,12 @@
+vim
+git
+man
+curl
+build-essential
+screen
+gdb
+libssl-dev
+psmisc
+python3
+python3-pip
+python3-opencv

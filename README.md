@@ -1,1 +1,0 @@
-# NumericalAnalysisCapstone2023
