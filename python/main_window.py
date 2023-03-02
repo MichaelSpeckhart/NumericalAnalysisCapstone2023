@@ -15,6 +15,11 @@ from PyQt6 import *
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 
+
+import sys
+# platform dependent
+sys.path.insert(1, '/Users/alexclevenger/NumericalAnalysisCapstone2023/build')
+
 import functions
 
 from interpreter import parse_command

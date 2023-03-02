@@ -3,7 +3,7 @@
 BITS = 64
 
 # Output directory
-ODIR  = build
+ODIR  = ../build
 tmp  := $(shell mkdir -p $(ODIR))
 
 # Basic compiler configuration and flags
