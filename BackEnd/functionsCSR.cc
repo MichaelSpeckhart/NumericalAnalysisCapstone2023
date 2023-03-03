@@ -227,6 +227,32 @@ template<typename T>
         return returnMatrix;
     }
 
+    vector<vector<double> > load_fileCSR(string fileName){
+        std::ifstream file(fileName);
+int num_row, num_col, num_lines;
+
+// Ignore comments headers
+while (file.peek() == '%') file.ignore(2048, '\n');
+
+// Read number of rows and columns
+file >> num_row>> num_col >> num_lines;
+
+// Create 2D array and fill with zeros
+vector<vector<double> >matrix = std::vector<std::vector<double> >(num_row, std::vector<double>(num_col, 0.0));         
+
+// fill the matrix with data
+for (int l = 0; l < num_lines; l++)
+{
+    double data;
+    int row, col;
+    file >> row >> col >> data;
+    matrix[(row -1)][col-1] = data;
+}
+
+file.close();
+return matrix;
+    }
+
 // int main() {
 //     vector<vector<int> > array = vector<vector<int> >(3, vector<int>(3));
 //     array[0][0] = 1;
