@@ -104,12 +104,12 @@ vector<vector<double> > sum_matrix(vector<vector<double> > m1,
                                    const vector<vector<double> > m2) {
   //   NB: in the future it may be important to use the compiler defined sizes
   //   for platform portability
-  const int d1 = static_cast<int>(m1.size()),
-            d2 = static_cast<int>(m1[0].size());
+  size_t d1 = static_cast<size_t>(m1.size()),
+            d2 = static_cast<size_t>(m1[0].size());
 
   // If the matrices do not have the same dimensions we return a dimension error
   // for the GUI to handle
-  if (d1 != static_cast<int>(m2.size()) || d2 != static_cast<int>(m2[0].size()))
+  if (d1 != static_cast<size_t>(m2.size()) || d2 != static_cast<size_t>(m2[0].size()))
     return d_err;
 
 #pragma omp parallel
@@ -285,8 +285,8 @@ bool save_file(const vector<vector<vector<double> > > matrices,
     f << ',';
     f << d2;
     f << '\n';
-    for (auto j = 0; j < d1; ++j)
-      for (auto k = 0; k < d2; ++k) {
+    for (size_t j = 0; j < d1; ++j)
+      for (size_t k = 0; k < d2; ++k) {
         f << matrix[j][k];
         if (j != d1 - 1 || k != d2 - 1)
           f << ',';

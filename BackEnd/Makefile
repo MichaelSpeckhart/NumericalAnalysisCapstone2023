@@ -10,19 +10,22 @@
 # clean: This target specifies a rule for cleaning up the build directory, removing all object files and the final output file.
 
 CXX = g++
-CXXFLAGS = -O3 -Wall -shared -std=c++17 -fPIC $(shell python3 -m pybind11 --includes)
-LIBS = $(shell python3-config --ldflags)
+CXXFLAGS = -O3 -Wall -shared -Werror -fopenmp -std=c++17 -fPIC $(shell python3 -m pybind11 --includes)
+LIBS = $(shell python3-config --ldflags) 
 SRC = functions.cc functionsCSC.cc functionsCSR.cc functionsCOO.cc
 OBJ = $(SRC:.cc=.o)
-TARGET = functions$(shell python3-config --extension-suffix)
+TARGET = ../build/functions$(shell python3-config --extension-suffix)
 
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CXX) $(CXXFLAGS) $(LIBS) $(OBJ) -o $(TARGET)
+	@echo 'Linking...'
+	@echo $(OBJ) '-->' $(TARGET)
+	@$(CXX) $(CXXFLAGS) $(LIBS) $(OBJ) -o $(TARGET)
 
 %.o: %.cc
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	@echo $< '-->' $@
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
 	@echo 'Cleaning up...'
