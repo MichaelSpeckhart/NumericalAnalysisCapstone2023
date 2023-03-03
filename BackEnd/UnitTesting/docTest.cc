@@ -2,6 +2,7 @@
 #include "doctest.h"
 #include "../functionsCSR.cc"
 #include "../functions.cc"
+#include "fstream"
 //Basic Unit tests for CSR add, multiply, and transpose
 //Use -d to time the tests
 
@@ -73,9 +74,6 @@ TEST_CASE("testing CSR multiply") {
 
     CSRMatrix<int> m1 = from_vector<int>(array);
     CSRMatrix<int> m2 = from_vector<int>(array2);
-    for(size_t i =0 ; i < 200000; i ++){
-        multiply_matrixCSR<int>(m1, m2);
-    }
     CSRMatrix<int> m3 = multiply_matrixCSR<int>(m1, m2);
     vector<vector<int> > multiplyResultExpected = {{0,2,3},{42,31,12},{63,32,0}};
     //check the multiply
@@ -140,15 +138,27 @@ TEST_CASE("CSR multiply Exceptions") {
     CHECK_THROWS_WITH_AS(multiply_matrixCSR<int>(m1, m2),"The number of columns in the first matrix must match the number of rows in the second matrix.",std::exception);
 }
 
-TEST_CASE("CSR Multiple") {
+TEST_CASE("LoadFile") {
     string file = "../../data/matrices/will199.mtx";
-    vector<vector<double> > array = load_fileCSR(file);
-    CSRMatrix<double> m1 = from_vector<double>(array);
-    multiply_matrixCSR<double>(m1, m1);
-}
+    vector<vector<double> > vec = load_fileCSR(file);
+    // Displaying the 2D vector
+    fstream key;
+    key.open("in.txt",ios::out);
+    for (int i = 0; i < vec.size(); i++) {
+        for (int j = 0; j < vec[i].size(); j++)
+            key << vec[i][j] << " ";
+        key << endl;
+    }
+    key.close();
+    CSRMatrix<double> m1 = from_vector<double>(vec);
+    CSRMatrix<double> m3 = multiply_matrixCSR<double>(m1, m1);
+    fstream key2;
+    key2.open("out.txt",ios::out);
+    for (int i = 0; i < vec.size(); i++) {
+        for (int j = 0; j < vec[i].size(); j++)
+            key2 << get_matrixCSR(m3,i,j) << " ";
+        key2 << endl;
+    }
+    key2.close();
 
-TEST_CASE("Reg Multiple") {
-    string file = "../../data/matrices/will199.mtx";
-    vector<vector<double> > array = load_fileCSR(file);
-    mult_matrix(array, array);
 }
