@@ -10,10 +10,11 @@
 # clean: This target specifies a rule for cleaning up the build directory, removing all object files and the final output file.
 
 CXX = g++
-CXXFLAGS = -O3 -Wall -shared -std=c++17 -fPIC
-SRC = matrixMarket mmio
-OBJ = $(SRC:.c=.o)
-TARGET = build
+CXXFLAGS = -O3 -Wall -shared -std=c++17 -fPIC $(shell python3 -m pybind11 --includes)
+LIBS = $(shell python3-config --ldflags)
+SRC = testRead
+OBJ = $(SRC:.cc=.o)
+TARGET = readFile$(shell python3-config --extension-suffix)
 
 all: $(TARGET)
 
