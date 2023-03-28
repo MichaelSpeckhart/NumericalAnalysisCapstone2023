@@ -26,14 +26,17 @@ int main() {
     }
 
     file.close();
+    std::fstream key;
+    key.open("test.txt",std::ios::out);
 
     // Print the matrix
     for (int i = 0; i < num_row; i++) {
         for (int j = 0; j < num_col; j++) {
-            std::cout << matrix[i + j * num_row] << " ";
+            key << matrix[i + j * num_row] << " ";
         }
-        std::cout << std::endl;
+        key << std::endl;
     }
+    key.close();
 
     // Deallocate memory
     delete[] matrix;
