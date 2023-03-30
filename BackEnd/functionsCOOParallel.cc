@@ -5,6 +5,8 @@
 #include <sstream>
 #include <string>
 
+#include "tbb/blocked_range.h"
+#include "tbb/parallel_for.h"
 
 //global variables
 //rows
@@ -160,9 +162,10 @@ namespace COO {
                 throw std::invalid_argument("Error: cannot divide by zero\n");
             }
 
-            for (size_t i = 0; i < compressedCoord.values.size(); ++i) {
-                compressedCoord.values.at(i) = compressedCoord.values.at(i) / scalar;
-            }
+            tbb::parallel_for(tbb::blocked_range<size_t>(0, compressedCoord.values.size()),
+                [&](const tbb::blocked_range<size_t>& r) {
+                    compressedCoord.values.at(r) = compressedCoord.values.at(r) / scalar;
+            });
 
             return compressedCoord;
         }

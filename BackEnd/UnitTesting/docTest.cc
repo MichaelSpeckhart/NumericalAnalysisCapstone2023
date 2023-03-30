@@ -1,6 +1,6 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
-#include "../functionsCSR.cc"
+#include "../functionsCSRParallel.cc"
 #include "../functions.cc"
 #include "fstream"
 //Basic Unit tests for CSR add, multiply, and transpose
@@ -136,29 +136,4 @@ TEST_CASE("CSR multiply Exceptions") {
     CSRMatrix<int> m2 = from_vector<int>(array2);
 
     CHECK_THROWS_WITH_AS(multiply_matrixCSR<int>(m1, m2),"The number of columns in the first matrix must match the number of rows in the second matrix.",std::exception);
-}
-
-TEST_CASE("LoadFile") {
-    string file = "../../data/matrices/will199.mtx";
-    vector<vector<double> > vec = load_fileCSR(file);
-    // Displaying the 2D vector
-    fstream key;
-    key.open("in.txt",ios::out);
-    for (int i = 0; i < vec.size(); i++) {
-        for (int j = 0; j < vec[i].size(); j++)
-            key << vec[i][j] << " ";
-        key << endl;
-    }
-    key.close();
-    CSRMatrix<double> m1 = from_vector<double>(vec);
-    CSRMatrix<double> m3 = multiply_matrixCSR<double>(m1, m1);
-    fstream key2;
-    key2.open("out.txt",ios::out);
-    for (int i = 0; i < vec.size(); i++) {
-        for (int j = 0; j < vec[i].size(); j++)
-            key2 << get_matrixCSR(m3,i,j) << " ";
-        key2 << endl;
-    }
-    key2.close();
-
 }
