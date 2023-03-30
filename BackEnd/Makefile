@@ -11,21 +11,20 @@
 
 CXX = g++
 CXXFLAGS = -O3 -Wall -shared -Werror -fopenmp -std=c++17 -fPIC $(shell python3 -m pybind11 --includes)
-LIBS = $(shell python3-config --ldflags) 
-SRC = functions.cc functionsCSC.cc functionsCSR.cc functionsCOO.cc
+LIBS = $(shell python3-config --ldflags)  -lgomp
+SRC = functions.cc functionsCSC.cc functionsCSR.cc functionsCOO.cc pybind.cc
 OBJ = $(SRC:.cc=.o)
 TARGET = ../build/functions$(shell python3-config --extension-suffix)
-
+DEST = ../build/
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
 	@echo 'Linking...'
 	@echo $(OBJ) '-->' $(TARGET)
-	@$(CXX) $(CXXFLAGS) $(LIBS) $(OBJ) -o $(TARGET)
-
+	@$(CXX) $(addprefix $(DEST), $(OBJ)) -o $(TARGET) $(LIBS)
 %.o: %.cc
 	@echo $< '-->' $@
-	@$(CXX) $(CXXFLAGS) -c $< -o $@
+	@$(CXX) $(CXXFLAGS) -c $< -o $(DEST)$@
 
 clean:
 	@echo 'Cleaning up...'

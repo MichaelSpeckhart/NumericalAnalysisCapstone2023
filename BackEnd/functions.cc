@@ -15,11 +15,12 @@
 #include <iostream>
 #include <random>
 #include <sstream>
+#include <climits>
 #include <string>
 #include <vector>
-
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <omp.h>
 
 using namespace std;
 
@@ -387,18 +388,8 @@ vector<vector<double> > gaussian_elimination(vector<vector<double> > &m) {
 }
 
 namespace py = pybind11;
-
-PYBIND11_MODULE(functions, m) {
-  m.doc() = "pybind11 example plugin";
-  m.def("read_file", &read_file, "Read the contents of a file");
-  m.def("sum_matrix", &sum_matrix, "Sum two matrices");
-  m.def("sub_matrix", &sub_matrix, "Subtract two matrices");
-  m.def("mult_matrix", &mult_matrix, "Multiply two matrices");
-  m.def("scale_up", &scale_up, "Multiply a matrix by a constant factor");
-  m.def("scale_down", &scale_down, "Divide a matrix by a constant factor");
-  m.def("transpose", &transpose, "Tranpose a matrix");
-  m.def("generate_random_matrix", &generate_random_matrix,
-        "Generate a random matrix");
-  m.def("save_file", &save_file, "save matrices to file");
-  m.def("gaussian_elimination", &gaussian_elimination, "solve linear system");
+void init_functions(py::module &m){
+  m.def("sum_matrix", &sum_matrix, "stuff");
 }
+
+
