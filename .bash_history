@@ -33,3 +33,35 @@ clear; make clean; make
 clear; make clean; make
 clear; make clean; make
 exit
+clear; make clean; make
+cd BackEnd/
+clear; make clean; make
+clear; make clean; make
+clear; make clean; make
+clear; make clean; make
+clear; make clean; make
+clear; make clean; make
+clear; make clean; make
+clear; make clean; make
+clear; make clean; make
+clear; make clean; make
+make
+make
+make
+make
+clear; make
+clear; make
+clear; make
+clear; make
+clear; make clean; make
+clear; make clean; make
+clear; make clean; make
+clear; make clean; make
+clear; make clean; make
+clear; make clean; make
+clear; make clean; make
+clear; make clean; make
+clear; make clean; make
+clear; make clean; make
+ls
+exit
