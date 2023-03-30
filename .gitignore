@@ -1,3 +1,4 @@
 *.o
 *.so
 Dockerfile.bash_history
+.bash_history
