@@ -6,6 +6,8 @@
 #include <vector>
 #include <tbb/tbb.h>
 
+#include <chrono>
+
 using namespace std;
 
 template<typename T>
@@ -24,6 +26,41 @@ template<typename T>
         vector<size_t> row_ptr;
     };
     //TODO loadfile
+template<typename T>
+    CSRMatrix<T> from_fileCSR(string fileName){
+    std::ifstream file(fileName);
+    int num_row = 0, num_col = 0, num_lines = 0;
+
+    // Ignore comments headers
+    while (file.peek() == '%') file.ignore(2048, '\n');
+
+    // Read number of rows, columns, and non-zero values
+    file >> num_row >> num_col >> num_lines;
+
+    CSRMatrix<T> returnMatrix;
+    returnMatrix.numRows = num_row;
+    returnMatrix.numColumns = num_col;
+    returnMatrix.row_ptr.push_back(0);
+    T data;
+    int row, col;
+    file >> row >> col >> data;
+    row = row-1;
+    for(int i = 0; i <num_row;i++){
+        while(num_lines > 0 && row == i){
+            returnMatrix.val.push_back(data);
+            returnMatrix.col_ind.push_back(col);
+            file >> row >> col >> data;
+            row--;
+            num_lines--;
+        }
+        //this happens every time
+        returnMatrix.row_ptr.push_back(returnMatrix.val.size());
+    }
+
+    file.close();
+
+    return returnMatrix;
+}
     //TODO savefile
 
 /// @brief Gets a value from the compressed sparse row(CSR) matrix
@@ -69,6 +106,7 @@ template<typename T>
         }
         return returnMatrix;
     }
+
 /// @brief Prints out a compressed sparse row(CSR) matrix to cout
 /// @tparam T The type of the matrix
 /// @param m1 The matrix too print out
@@ -81,6 +119,12 @@ template<typename T>
             cout << endl;
         }
     }
+/// @brief Adds two compressed spares row(CSR) matrixes together
+/// @exception The two matrixes must have the same dimensions
+/// @tparam T The type of both matrixes
+/// @param m1 The first matrix too add
+/// @param m2 The second matrix too add
+/// @return m1+m2
 template<typename T>
 CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2){
     if(m1.numRows!= m2.numRows){
@@ -91,7 +135,7 @@ CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2){
     }
     CSRMatrix<T> returnMatrix = tbb::parallel_reduce(tbb::blocked_range<int>(0, m1.numRows), CSRMatrix<T>(),
         [m1,m2](const tbb::blocked_range<int>& r, CSRMatrix<T> v) -> CSRMatrix<T> {
-            for (size_t i = r.begin(); i < r.end(); i++) {
+            for (auto i = r.begin(); i < r.end(); i++) {
                 size_t a1 = m1.row_ptr.at(i);
                 size_t b1 = m1.row_ptr.at(i+1);
                 size_t a2 = m2.row_ptr.at(i);
@@ -131,9 +175,9 @@ CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2){
             return v;
         },
         [m1,m2](CSRMatrix<T> v1, CSRMatrix<T> v2) -> CSRMatrix<T> {
-            v1.row_ptr.insert(v1.row_ptr.end(),v2.row_ptr.begin(),v2.row_ptr.end());
-            v1.col_ind.insert(v1.col_ind.end(),v2.col_ind.begin(),v2.col_ind.end());
-            v1.val.insert(v1.val.end(),v2.val.begin(),v2.val.end());
+            v1.row_ptr.insert(v1.row_ptr.end(),v2.row_ptr.cbegin(),v2.row_ptr.cend());
+            v1.col_ind.insert(v1.col_ind.end(),v2.col_ind.cbegin(),v2.col_ind.cend());
+            v1.val.insert(v1.val.end(),v2.val.cbegin(),v2.val.cend());
             return v1;
         }
     );
@@ -259,43 +303,17 @@ file.close();
 return matrix;
     }
 
-// int main() {
-//     vector<vector<int> > array = vector<vector<int> >(3, vector<int>(3));
-//     array[0][0] = 1;
-//     array[0][1] = 2;
-//     array[0][2] = 3;
-//     array[1][0] = 4;
-//     array[1][1] = 5;
-//     array[1][2] = 6;
-//     array[2][0] = 7;
-//     array[2][1] = 8;
-//     array[2][2] = 9;
-//     // array[3][0] = 10;
-//     // array[3][1] = 11;
-//     // array[3][2] = 12;
+int main() {
+    CSRMatrix<double> m1 = from_fileCSR<double>("../../data/matrices/TSOPF_RS_b39_c30.mtx");
 
-//     vector<vector<int> > array2 = vector<vector<int> >(3, vector<int>(3));
-//     array2[0][0] = 9;
-//     array2[0][1] = -4;
-//     array2[0][2] = 7;
-//     array2[1][0] = -6;
-//     array2[1][1] = -5;
-//     array2[1][2] = 4;
-//     array2[2][0] = 3;
-//     array2[2][1] = 2;
-//     array2[2][2] = 1;
-//     // array2[3][0] = 10;
-//     // array2[3][1] = 11;
-//     // array2[3][2] = 12;
+    CSRMatrix<double> m2 = from_fileCSR<double>("../../data/matrices/TSOPF_RS_b39_c30.mtx");
+    //for(size_t i=0 ; i < 1000;i++){
+        auto loop4_start = chrono::high_resolution_clock::now();
+        CSRMatrix<double> m3 = add_matrixCSR<double>(m1, m2);
+        auto loop_duration = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - loop4_start);
+		cout << "Loop 4 duration: " << loop_duration.count() << " microseconds" << endl;
+    //}
 
-//     CSRMatrix<int> m1 = from_vector(array);
-//     CSRMatrix<int> m2 = from_vector(array2);
-//     CSRMatrix<int> m3 = add_matrixCSR(m1, transpose_matrixCSR(m2));
-//     print_matrixCSR(m3);
-//     m3 = transpose_matrixCSR(m3);
-//     // m3 = transpose_matrixCSR(m3);
-//     print_matrixCSR(m3);
-
-//     return 0;
-// }
+    return 0;
+}
 
