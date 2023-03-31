@@ -1,4 +1,8 @@
 *.o
 *.so
 Dockerfile.bash_history
+<<<<<<< HEAD
 .bash_history
+=======
+.bash_history
+>>>>>>> e455d78a47629b2fcb04472e75bfa9c1ce600b87
