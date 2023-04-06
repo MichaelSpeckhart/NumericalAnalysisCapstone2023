@@ -6,6 +6,8 @@
 //Basic Unit tests for CSR add, multiply, and transpose
 //Use -d to time the tests
 
+
+/// Test the CSRMatrix class
 /*
 Takes a CSRMatrix and a dense matrix and makes sure they have the same elements
 */
@@ -137,3 +139,181 @@ TEST_CASE("CSR multiply Exceptions") {
 
     CHECK_THROWS_WITH_AS(multiply_matrixCSR<int>(m1, m2),"The number of columns in the first matrix must match the number of rows in the second matrix.",std::exception);
 }
+
+TEST_CASE("testing CSR multiply scalar") {
+    vector<vector<int> > array = {{1,0,0},{4,5,6},{0,8,9}};
+
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    CSRMatrix<int> m2 = multiply_matrixCSR<int>(m1, 2);
+    vector<vector<int> > multiplyResultExpected = {{2,0,0},{8,10,12},{0,16,18}};
+    //check the multiply
+    CHECKCSR(m2,multiplyResultExpected);
+}
+
+TEST_CASE("testing CSR multiply scalar zero matrix") {
+    vector<vector<int> > array = {{0,0,0},{0,0,0},{0,0,0}};
+
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    CSRMatrix<int> m2 = multiply_matrixCSR<int>(m1, 2);
+    vector<vector<int> > multiplyResultExpected = {{0,0,0},{0,0,0},{0,0,0}};
+    //check the multiply
+    CHECKCSR(m2,multiplyResultExpected);
+}
+
+TEST_CASE("testing CSR multiply scalar zero row") {
+    vector<vector<int> > array = {{0,0,0},{0,5,0},{0,0,0}};
+
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    CSRMatrix<int> m2 = multiply_matrixCSR<int>(m1, 2);
+    vector<vector<int> > multiplyResultExpected = {{0,0,0},{0,10,0},{0,0,0}};
+    //check the multiply
+    CHECKCSR(m2,multiplyResultExpected);
+}
+
+TEST_CASE("testing CSR multiply scalar zero column") {
+    vector<vector<int> > array = {{0,0,0},{0,5,0},{0,0,0}};
+
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    CSRMatrix<int> m2 = multiply_matrixCSR<int>(m1, 2);
+    vector<vector<int> > multiplyResultExpected = {{0,0,0},{0,10,0},{0,0,0}};
+    //check the multiply
+    CHECKCSR(m2,multiplyResultExpected);
+}
+
+TEST_CASE("testing CSR multiply scalar zero row and column") {
+    vector<vector<int> > array = {{0,0,0},{0,0,0},{0,0,0}};
+
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    CSRMatrix<int> m2 = multiply_matrixCSR<int>(m1, 2);
+    vector<vector<int> > multiplyResultExpected = {{0,0,0},{0,0,0},{0,0,0}};
+    //check the multiply
+    CHECKCSR(m2,multiplyResultExpected);
+}
+
+TEST_CASE("testing CSR subtract") {
+    vector<vector<int> > array = {{1,0,0},{4,5,6},{0,8,9}};
+    vector<vector<int> > array2 = {{0,2},{0,-5},{7,8}};
+
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    CSRMatrix<int> m2 = from_vector<int>(array2);
+    CSRMatrix<int> m3 = subtract_matrixCSR<int>(m1, m2);
+    vector<vector<int> > subtractResultExpected = {{1,-2,0},{4,10,6},{-7,0,1}};
+    //check the subtract
+    CHECKCSR(m3,subtractResultExpected);
+}
+
+TEST_CASE("testing CSR subtract zero matrix") {
+    vector<vector<int> > array = {{0,0,0},{0,0,0},{0,0,0}};
+    vector<vector<int> > array2 = {{0,0,0},{0,0,0},{0,0,0}};
+
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    CSRMatrix<int> m2 = from_vector<int>(array2);
+    CSRMatrix<int> m3 = subtract_matrixCSR<int>(m1, m2);
+    vector<vector<int> > subtractResultExpected = {{0,0,0},{0,0,0},{0,0,0}};
+    //check the subtract
+    CHECKCSR(m3,subtractResultExpected);
+}
+
+TEST_CASE("CSR Subtract Exceptions") {
+    vector<vector<int> > array = {{1,0,0},{4,5,6},{0,8,9}};
+    vector<vector<int> > array2 = {{0,2},{0,-5}};
+
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    CSRMatrix<int> m2 = from_vector<int>(array2);
+
+    CHECK_THROWS_WITH_AS(subtract_matrixCSR<int>(m1, m2),"The number of columns in the first matrix must match the number of rows in the second matrix.",std::exception);
+}
+
+TEST_CASE("testing CSR subtract zero row") {
+    vector<vector<int> > array = {{0,0,0},{0,5,0},{0,0,0}};
+    vector<vector<int> > array2 = {{0,0,0},{0,0,0},{0,0,0}};
+
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    CSRMatrix<int> m2 = from_vector<int>(array2);
+    CSRMatrix<int> m3 = subtract_matrixCSR<int>(m1, m2);
+    vector<vector<int> > subtractResultExpected = {{0,0,0},{0,5,0},{0,0,0}};
+    //check the subtract
+    CHECKCSR(m3,subtractResultExpected);
+}
+
+TEST_CASE("CSR Subtract Exceptions") {
+    //number of rows in m1 must match number of rows in m2
+    vector<vector<int> > array = {{1,0,0},{4,5,6},{0,8,9}};
+    vector<vector<int> > array2 = {{0,2},{0,-5}};
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    CSRMatrix<int> m2 = from_vector<int>(array2);
+    CHECK_THROWS_WITH_AS(subtract_matrixCSR<int>(m1, m2),"The number of rows in the first matrix must match the number of rows in the second matrix.",std::exception);
+}
+
+TEST_CASE("testing CSR subtract zero column") {
+    vector<vector<int> > array = {{0,0,0},{0,5,0},{0,0,0}};
+    vector<vector<int> > array2 = {{0,0,0},{0,0,0},{0,0,0}};
+
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    CSRMatrix<int> m2 = from_vector<int>(array2);
+    CSRMatrix<int> m3 = subtract_matrixCSR<int>(m1, m2);
+    vector<vector<int> > subtractResultExpected = {{0,0,0},{0,5,0},{0,0,0}};
+    //check the subtract
+    CHECKCSR(m3,subtractResultExpected);
+}
+
+TEST_CASE("Find min value") {
+    vector<vector<int> > array = {{1,0,0},{4,5,6},{0,8,9}};
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    int min = find_min_value<int>(m1);
+    CHECK(min == 0);
+}
+
+TEST_CASE("Find min value zero matrix") {
+    vector<vector<int> > array = {{0,0,0},{0,0,0},{0,0,0}};
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    int min = find_min_value<int>(m1);
+    CHECK(min == 0);
+}
+
+TEST_CASE("Find min value zero row") {
+    vector<vector<int> > array = {{0,0,0},{0,5,0},{0,0,0}};
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    int min = find_min_value<int>(m1);
+    CHECK(min == 0);
+}
+
+TEST_CASE("Find min value zero column") {
+    vector<vector<int> > array = {{0,0,0},{0,5,0},{0,0,0}};
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    int min = find_min_value<int>(m1);
+    CHECK(min == 0);
+}
+
+TEST_CASE("Find max value") {
+    vector<vector<int> > array = {{1,0,0},{4,5,6},{0,8,9}};
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    int max = find_max_value<int>(m1);
+    CHECK(max == 9);
+}
+
+TEST_CASE("Find max value zero matrix") {
+    vector<vector<int> > array = {{0,0,0},{0,0,0},{0,0,0}};
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    int max = find_max_value<int>(m1);
+    CHECK(max == 0);
+}
+
+TEST_CASE("Find max value zero row") {
+    vector<vector<int> > array = {{0,0,0},{0,5,0},{0,0,0}};
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    int max = find_max_value<int>(m1);
+    CHECK(max == 5);
+}
+
+TEST_CASE("Find max value zero column") {
+    vector<vector<int> > array = {{0,0,0},{0,5,0},{0,0,0}};
+    CSRMatrix<int> m1 = from_vector<int>(array);
+    int max = find_max_value<int>(m1);
+    CHECK(max == 5);
+}
+
+
+/// Test the CSCMatrix class
+
+
