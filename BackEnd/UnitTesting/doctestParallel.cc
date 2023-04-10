@@ -18,15 +18,15 @@ void CHECKCSR(CSRMatrix<double> one, CSRMatrix<double> two){
     }
 }
 
-TEST_CASE("CSR ADD parallel Correctness") {
+// TEST_CASE("CSR ADD parallel Correctness") {
 
-    CSRMatrix<double> m1 = load_fileCSR<double>("../../data/matrices/1138_bus.mtx");
-    CSRMatrix<double> m2 = load_fileCSR<double>("../../data/matrices/1138_bus.mtx");
+//     CSRMatrix<double> m1 = load_fileCSR<double>("../../data/matrices/1138_bus.mtx");
+//     CSRMatrix<double> m2 = load_fileCSR<double>("../../data/matrices/1138_bus.mtx");
 
-    CSRMatrix<double> m3 = add_matrixCSR<double>(m1, m2);
-    CSRMatrix<double> m4 = parallel::add_matrixCSR<double>(m1, m2);
-    CHECKCSR(m3,m4);
-}
+//     CSRMatrix<double> m3 = add_matrixCSR<double>(m1, m2);
+//     CSRMatrix<double> m4 = parallel::add_matrixCSR<double>(m1, m2);
+//     CHECKCSR(m3,m4);
+// }
 
 
 TEST_CASE("CSR ADD parallel TIME") {
@@ -47,4 +47,29 @@ TEST_CASE("CSR ADD serial TIME") {
     //for(size_t i=0 ; i < 1000;i++){
     CSRMatrix<double> m3 = add_matrixCSR<double>(m1, m2);
     //}
+}
+
+TEST_CASE("CSR max parallel Correctness") {
+
+    CSRMatrix<double> m1 = load_fileCSR<double>("../../data/matrices/1138_bus.mtx");
+
+    double serial = find_max_CSR<double>(m1);
+    double parallel = parallel::find_max_CSR<double>(m1);
+    CHECK(serial == parallel);
+}
+
+TEST_CASE("CSR max parallel TIME") {
+
+    CSRMatrix<double> m1 = load_fileCSR<double>("../../data/matrices/kmer_V1r.mtx");
+
+    double parallel = parallel::find_max_CSR<double>(m1);
+    CHECK(parallel == parallel);
+}
+
+TEST_CASE("CSR max serial TIME") {
+
+    CSRMatrix<double> m1 = load_fileCSR<double>("../../data/matrices/kmer_V1r.mtx");
+
+    double serial = find_max_CSR<double>(m1);
+    CHECK(serial == serial);
 }

@@ -78,4 +78,28 @@ CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2){
     returnMatrix.row_ptr.insert(returnMatrix.row_ptr.begin(),1,0);
     return returnMatrix;
 }
+
+/// @brief Find the max value in a compressed sparse row(CSR) matrix
+/// @tparam T The type of the matrix
+/// @param m The CSR matrix to find the max value of
+/// @return The max value in the matrix
+template <typename T>
+T find_max_CSR(CSRMatrix<T> m1)
+{
+    return tbb::parallel_reduce(
+        tbb::blocked_range<size_t>(0, m1.val.size()),
+        m1.val[0],
+        [&](const tbb::blocked_range<size_t>& r, T max_value) {
+            for (size_t i = r.begin(); i != r.end(); ++i)
+            {
+                if (m1.val[i] > max_value)
+                {
+                    max_value = m1.val[i];
+                }
+            }
+            return max_value;
+        },
+        [](T x, T y) { return std::max(x, y); }
+    );
+}
 }
