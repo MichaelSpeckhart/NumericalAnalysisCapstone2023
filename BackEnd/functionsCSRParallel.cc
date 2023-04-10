@@ -8,6 +8,7 @@
 
 #include <chrono>
 
+namespace parallel {
 using namespace std;
 
 template<typename T>
@@ -25,42 +26,6 @@ template<typename T>
         vector<size_t> col_ind;
         vector<size_t> row_ptr;
     };
-    //TODO loadfile
-template<typename T>
-    CSRMatrix<T> from_fileCSR(string fileName){
-    std::ifstream file(fileName);
-    int num_row = 0, num_col = 0, num_lines = 0;
-
-    // Ignore comments headers
-    while (file.peek() == '%') file.ignore(2048, '\n');
-
-    // Read number of rows, columns, and non-zero values
-    file >> num_row >> num_col >> num_lines;
-
-    CSRMatrix<T> returnMatrix;
-    returnMatrix.numRows = num_row;
-    returnMatrix.numColumns = num_col;
-    returnMatrix.row_ptr.push_back(0);
-    T data;
-    int row, col;
-    file >> row >> col >> data;
-    row = row-1;
-    for(int i = 0; i <num_row;i++){
-        while(num_lines > 0 && row == i){
-            returnMatrix.val.push_back(data);
-            returnMatrix.col_ind.push_back(col);
-            file >> row >> col >> data;
-            row--;
-            num_lines--;
-        }
-        //this happens every time
-        returnMatrix.row_ptr.push_back(returnMatrix.val.size());
-    }
-
-    file.close();
-
-    return returnMatrix;
-}
     //TODO savefile
 
 /// @brief Gets a value from the compressed sparse row(CSR) matrix
@@ -277,43 +242,188 @@ template<typename T>
         return returnMatrix;
     }
 
-    vector<vector<double> > load_fileCSR(string fileName){
-        std::ifstream file(fileName);
-int num_row, num_col, num_lines;
-
-// Ignore comments headers
-while (file.peek() == '%') file.ignore(2048, '\n');
-
-// Read number of rows and columns
-file >> num_row>> num_col >> num_lines;
-
-// Create 2D array and fill with zeros
-vector<vector<double> >matrix = std::vector<std::vector<double> >(num_row, std::vector<double>(num_col, 0.0));         
-
-// fill the matrix with data
-for (int l = 0; l < num_lines; l++)
+/// @brief Subtract two compressed sparse row(CSR) matrixes
+/// @exception The number of columns in m1 must equal the number of rows in m2
+/// @tparam T The type of the matrixes
+/// @param m1 The first CSR matrix to subtract
+/// @param m2 The second CSR matrix to subtract
+/// @return The difference of m1 and m2
+template <typename T>
+CSRMatrix<T> subtract_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
 {
-    double data;
+    if (m1.numRows != m2.numRows)
+    {
+        throw std::invalid_argument("The number of rows in the first matrix must match the number of rows in the second matrix.");
+    }
+    if (m1.numColumns != m2.numColumns)
+    {
+        throw std::invalid_argument("The number of columns in the first matrix must match the number of columns in the second matrix.");
+    }
+    CSRMatrix<T> returnMatrix;
+    returnMatrix.numRows = m1.numRows;
+    returnMatrix.numColumns = m1.numColumns;
+    returnMatrix.row_ptr.push_back(0);
+
+    for (size_t i = 0; i < m1.numRows; i++)
+    {
+        size_t a1 = m1.row_ptr.at(i);
+        size_t b1 = m1.row_ptr.at(i + 1);
+        size_t a2 = m2.row_ptr.at(i);
+        size_t b2 = m2.row_ptr.at(i + 1);
+        while (a1 < b1 && a2 < b2)
+        {
+            if (m1.col_ind.at(a1) < m2.col_ind.at(a2))
+            {
+                returnMatrix.val.push_back(m1.val.at(a1));
+                returnMatrix.col_ind.push_back(m1.col_ind.at(a1));
+                a1++;
+            }
+            else if (m1.col_ind.at(a1) > m2.col_ind.at(a2))
+            {
+                returnMatrix.val.push_back(-m2.val.at(a2));
+                returnMatrix.col_ind.push_back(m2.col_ind.at(a2));
+                a2++;
+            }
+            else if (m1.col_ind.at(a1) == m2.col_ind.at(a2))
+            {
+                T value = m1.val.at(a1) - m2.val.at(a2);
+                if (value != 0)
+                {
+                    returnMatrix.val.push_back(value);
+                    returnMatrix.col_ind.push_back(m1.col_ind.at(a1));
+                }
+                a1++;
+                a2++;
+            }
+        }
+        while (a1 < b1)
+        {
+            returnMatrix.val.push_back(m1.val.at(a1));
+            returnMatrix.col_ind.push_back(m1.col_ind.at(a1));
+            a1++;
+        }
+        while (a2 < b2)
+        {
+            returnMatrix.val.push_back(-m2.val.at(a2));
+            returnMatrix.col_ind.push_back(m2.col_ind.at(a2));
+            a2++;
+        }
+        returnMatrix.row_ptr.push_back(returnMatrix.col_ind.size());
+    }
+    return returnMatrix;
+}
+
+/// @brief Scalar multiply a compressed sparse row(CSR) matrix
+/// @tparam T The type of the matrix
+/// @param m The CSR matrix to scalar multiply
+/// @param scalar The scalar to multiply the matrix by
+/// @return The scalar multiplied matrix
+template <typename T>
+CSRMatrix<T> scalar_multiply_CSR(CSRMatrix<T> m, T scalar)
+{
+
+    CSRMatrix<T> result;
+    result.numRows = m.numRows;
+    result.numColumns = m.numColumns;
+    result.val = vector<T>(m.val.size());
+    result.col_ind = vector<size_t>(m.col_ind.begin(), m.col_ind.end());
+    result.row_ptr = vector<size_t>(m.row_ptr.begin(), m.row_ptr.end());
+    for (size_t i = 0; i < m.val.size(); i++)
+    {
+        result.val.at(i) = m.val.at(i) * scalar;
+    }
+    return result;
+}
+
+/// @brief Find the min value in a compressed sparse row(CSR) matrix
+/// @tparam T The type of the matrix
+/// @param m The CSR matrix to find the min value of
+/// @return The min value in the matrix
+template <typename T>
+T find_min_CSR(CSRMatrix<T> matrix)
+{
+
+    T min_value = matrix.val[0];
+    for (T val : matrix.val)
+    {
+        if (val < min_value)
+        {
+            min_value = val;
+        }
+    }
+    return min_value;
+}
+
+/// @brief Find the max value in a compressed sparse row(CSR) matrix
+/// @tparam T The type of the matrix
+/// @param m The CSR matrix to find the max value of
+/// @return The max value in the matrix
+template <typename T>
+T find_max_CSR(CSRMatrix<T> matrix)
+{
+    T max_value = matrix.val[0];
+    for (T val : matrix.val)
+    {
+        if (val > max_value)
+        {
+            max_value = val;
+        }
+    }
+    return max_value;
+}
+
+/// @brief Creates CSR matrix for .mtx file
+/// @tparam T the type of matrix
+/// @param fileName the name of the file to import
+/// @return a new CSR matrix from the filename
+template<typename T>
+    CSRMatrix<T> load_fileCSR(string fileName){
+    std::ifstream file(fileName);
+    int num_row = 0, num_col = 0, num_lines = 0;
+
+    // Ignore comments headers
+    while (file.peek() == '%') file.ignore(2048, '\n');
+
+    // Read number of rows, columns, and non-zero values
+    file >> num_row >> num_col >> num_lines;
+
+    CSRMatrix<T> returnMatrix;
+    returnMatrix.numRows = num_row;
+    returnMatrix.numColumns = num_col;
+    returnMatrix.row_ptr.push_back(0);
+    T data;
     int row, col;
     file >> row >> col >> data;
-    matrix[(row -1)][col-1] = data;
-}
-
-file.close();
-return matrix;
+    row = row-1;
+    for(int i = 0; i <num_row;i++){
+        while(num_lines > 0 && row == i){
+            returnMatrix.val.push_back(data);
+            returnMatrix.col_ind.push_back(col);
+            file >> row >> col >> data;
+            row--;
+            num_lines--;
+        }
+        //this happens every time
+        returnMatrix.row_ptr.push_back(returnMatrix.val.size());
     }
 
-int main() {
-    CSRMatrix<double> m1 = from_fileCSR<double>("../../data/matrices/TSOPF_RS_b39_c30.mtx");
+    file.close();
 
-    CSRMatrix<double> m2 = from_fileCSR<double>("../../data/matrices/TSOPF_RS_b39_c30.mtx");
-    //for(size_t i=0 ; i < 1000;i++){
-        auto loop4_start = chrono::high_resolution_clock::now();
-        CSRMatrix<double> m3 = add_matrixCSR<double>(m1, m2);
-        auto loop_duration = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - loop4_start);
-		cout << "Loop 4 duration: " << loop_duration.count() << " microseconds" << endl;
-    //}
-
-    return 0;
+    return returnMatrix;
 }
 
+// int main() {
+//     CSRMatrix<double> m1 = from_fileCSR<double>("../../data/matrices/TSOPF_RS_b39_c30.mtx");
+
+//     CSRMatrix<double> m2 = from_fileCSR<double>("../../data/matrices/TSOPF_RS_b39_c30.mtx");
+//     //for(size_t i=0 ; i < 1000;i++){
+//         auto loop4_start = chrono::high_resolution_clock::now();
+//         CSRMatrix<double> m3 = add_matrixCSR<double>(m1, m2);
+//         auto loop_duration = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - loop4_start);
+// 		cout << "Loop 4 duration: " << loop_duration.count() << " microseconds" << endl;
+//     //}
+
+//     return 0;
+// }
+
+}

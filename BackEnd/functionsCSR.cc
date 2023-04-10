@@ -399,32 +399,44 @@ T find_max_CSR(CSRMatrix<T> matrix)
     return max_value;
 }
 
-vector<vector<double>> load_fileCSR(string fileName)
-{
+/// @brief Creates CSR matrix for .mtx file
+/// @tparam T the type of matrix
+/// @param fileName the name of the file to import
+/// @return a new CSR matrix from the filename
+template<typename T>
+    CSRMatrix<T> load_fileCSR(string fileName){
     std::ifstream file(fileName);
-    int num_row, num_col, num_lines;
+    int num_row = 0, num_col = 0, num_lines = 0;
 
     // Ignore comments headers
-    while (file.peek() == '%')
-        file.ignore(2048, '\n');
+    while (file.peek() == '%') file.ignore(2048, '\n');
 
-    // Read number of rows and columns
+    // Read number of rows, columns, and non-zero values
     file >> num_row >> num_col >> num_lines;
 
-    // Create 2D array and fill with zeros
-    vector<vector<double>> matrix = std::vector<std::vector<double>>(num_row, std::vector<double>(num_col, 0.0));
-
-    // fill the matrix with data
-    for (int l = 0; l < num_lines; l++)
-    {
-        double data;
-        int row, col;
-        file >> row >> col >> data;
-        matrix[(row - 1)][col - 1] = data;
+    CSRMatrix<T> returnMatrix;
+    returnMatrix.numRows = num_row;
+    returnMatrix.numColumns = num_col;
+    returnMatrix.row_ptr.push_back(0);
+    T data;
+    int row, col;
+    file >> row >> col >> data;
+    row = row-1;
+    for(int i = 0; i <num_row;i++){
+        while(num_lines > 0 && row == i){
+            returnMatrix.val.push_back(data);
+            returnMatrix.col_ind.push_back(col);
+            file >> row >> col >> data;
+            row--;
+            num_lines--;
+        }
+        //this happens every time
+        returnMatrix.row_ptr.push_back(returnMatrix.val.size());
     }
 
     file.close();
-    return matrix;
+
+    return returnMatrix;
 }
 
 // int main() {
