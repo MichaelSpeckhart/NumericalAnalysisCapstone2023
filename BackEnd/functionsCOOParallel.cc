@@ -5,8 +5,6 @@
 #include <sstream>
 #include <string>
 
-#include "tbb/blocked_range.h"
-#include "tbb/parallel_for.h"
 
 //global variables
 //rows
@@ -25,11 +23,6 @@ namespace COO {
      */
     template <typename T>
     class COOMatrix {
-        struct CompressedCoordinate {
-            size_t row;
-            size_t column;
-            double value;
-        };
 
     //save position and value of non-zero elements
         public:
@@ -129,6 +122,52 @@ namespace COO {
         }
 
     /**
+     * @brief Find the minumum, nonzero value within the COO values vector
+     * 
+     * @tparam T 
+     * @param compressedCoord 
+     * @return T 
+     */
+    template<typename T>
+        T find_min_COO(COOMatrix<T> &compressedCoord) {
+            if (compressedCoord.values.size() == 0) {
+                throw std::invalid_argument("Error: no values within the COO matrix\n");
+                return 0;
+            }
+            T min_val = compressedCoord.values[0];
+            for (auto &value : compressedCoord.values) {
+                if (value < min_val) {
+                    min_val = value;
+                }
+            }
+
+            return min_val;
+        }
+
+    /**
+     * @brief Find the maximum value within the COO values vector
+     * 
+     * @tparam T 
+     * @param compressedCoord 
+     * @return T 
+     */
+    template<typename T>
+        T find_max_COO(COOMatrix<T> &compressedCoord) {
+            if (compressedCoord.values.size() == 0) {
+                throw std::invalid_argument("Error: no values within the COO matrix\n");
+                return 0;
+            }
+            T max_val = compressedCoord.values[0];
+            for (auto &value : compressedCoord.values) {
+                if (value > max_val) {
+                    max_val = value;
+                }
+            }
+
+            return max_val;
+        }
+
+    /**
      * @brief Scale up a matrix by a certain scalar, throws error if scalar is zero
      * 
      * @param compressedCoord 
@@ -136,7 +175,7 @@ namespace COO {
      * @return COO 
      */
     template<typename T>
-        COOMatrix<T> scalarMultCOO(COOMatrix<T> &compressedCoord, int scalar) {
+        COOMatrix<T> scalar_mult_matrixCOO(COOMatrix<T> &compressedCoord, int scalar) {
             if (scalar == 0) {
                 throw std::invalid_argument("Error: cannot zero out matrix\n");
             }
@@ -157,15 +196,14 @@ namespace COO {
      * @return COO 
      */
     template<typename T>
-        COOMatrix<T> scalarDivCOO(COOMatrix<T> &compressedCoord, int scalar) {
+        COOMatrix<T> scalar_div_matrixCOO(COOMatrix<T> &compressedCoord, int scalar) {
             if (scalar == 0) {
                 throw std::invalid_argument("Error: cannot divide by zero\n");
             }
 
-            tbb::parallel_for(tbb::blocked_range<size_t>(0, compressedCoord.values.size()),
-                [&](const tbb::blocked_range<size_t>& r) {
-                    compressedCoord.values.at(r) = compressedCoord.values.at(r) / scalar;
-            });
+            for (size_t i = 0; i < compressedCoord.values.size(); ++i) {
+                compressedCoord.values.at(i) = compressedCoord.values.at(i) / scalar;
+            }
 
             return compressedCoord;
         }
@@ -340,5 +378,23 @@ namespace COO {
 
                 return returnMatrix;
             }
+    
+    std::vector<std::vector<double>> load_fileCOO(std::string fileName) {
+        std::ifstream file(fileName);
+        int num_row, num_col, num_lines;
+
+        file >> num_row >> num_col >> num_lines;
+
+        std::vector<std::vector<double>> matrix = std::vector<std::vector<double>>(num_row, std::vector<double>(num_col, 0.0));
+
+        for (int i = 0; i < num_lines; ++i) {
+            double data;
+            int row, col;
+            file >> row >> col >> data;
+            matrix[(row-1)][col-1] = data;
+        }
+        file.close();
+        return matrix;
+    }
 }
 
