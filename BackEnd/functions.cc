@@ -365,26 +365,43 @@ vector<double> backward_substitution(vector<vector<double> > &m) {
   return res;
 }
 
-/// @brief Performs gaussian elmination.
-/// @param m Input matrix
-/// @return The computation result.
-vector<vector<double> > gaussian_elimination(vector<vector<double> > &m) {
-  const int singular_flag = forward_elimination(m);
+// gaussian elimination with partial pivoting
+// returns true if successful, false if A is singular
+// Modifies both A and b to store the results
+bool gaussian_elimination(std::vector<std::vector<double> > &A, std::vector<double> &b) {
+    const size_t n = A.size();
 
-  if (singular_flag != -1) {
-    int n = static_cast<int>(m.size());
-    if (m[singular_flag][n]) {
-      cout << "inconsistent system"
-           << "endl";
-      vector<double> r(n + 1);
-      return {r};
+    for (size_t i = 0; i < n; i++) {
+
+        // find pivot row and swap
+        size_t max = i;
+        for (size_t k = i + 1; k < n; k++)
+            if (abs(A[k][i]) > abs(A[max][i]))
+                max = k;
+        std::swap(A[i], A[max]);
+        std::swap(b[i], b[max]);
+
+        // singular or nearly singular
+        if (abs(A[i][i]) <= 1e-10)
+            return false;
+
+        // pivot within A and b
+        for (size_t k = i + 1; k < n; k++) {
+            double t = A[k][i] / A[i][i];
+            for (size_t j = i; j < n; j++) {
+                A[k][j] -= A[i][j] * t;
+            }
+            b[k] -= b[i] * t;
+        }
     }
-    vector<double> r(n + 2);
-    return {r};
-  }
-  // NB: the result needs to be wrapped in another vector since the program only
-  // deals with matrices.
-  return {backward_substitution(m)};
+
+    // back substitution
+    for (int i = n - 1; i >= 0; i--) {
+        for (int j = i + 1; j < n; j++)
+            b[i] -= A[i][j] * b[j];
+        b[i] = b[i] / A[i][i];
+    }
+    return true;
 }
 
 namespace py = pybind11;
