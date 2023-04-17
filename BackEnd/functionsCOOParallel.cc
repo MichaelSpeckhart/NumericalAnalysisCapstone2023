@@ -5,6 +5,10 @@
 #include <sstream>
 #include <string>
 
+#include "tbb/parallel_for.h"
+#include "tbb/parallel_reduce.h"
+#include "tbb/blocked_range2d.h"
+
 
 //global variables
 //rows
@@ -31,12 +35,7 @@ namespace COO {
             std::vector<int> values;
             size_t numRows;
             size_t numCols;
-            size_t nnz;
-            COOMatrix(size_t nonz) { 
-                rowCoord.reserve(nonz);
-                colCoord.reserve(nonz);
-                values.reserve(nonz);
-            }            
+            size_t nnz;         
     };
 
     /**
@@ -351,32 +350,37 @@ namespace COO {
          * @return COOMatrix<T> 
          */
         template<typename T>
-            COOMatrix<T> transpose_matrixCOO(COOMatrix<T> compressedCoord) {
-                COOMatrix<T> returnMatrix;
-                returnMatrix.numRows = compressedCoord.numRows;
-                returnMatrix.numCols = compressedCoord.numCols;
-                returnMatrix.nnz = compressedCoord.nnz;
+            COOMatrix<T> transpose_matrixCOO(COOMatrix<T> A) {
+                // Create a new instance of the COOMatrix class to hold the transposed matrix
+                COOMatrix<T> AT;
 
-                std::vector<std::vector<T>> returnValues(returnMatrix.numRows, std::vector<T>(returnMatrix.numCols, 0));
+                // Set the number of rows, columns, and non-zero elements in the transposed matrix to be the same as the original matrix
+                AT.numRows = A.numCols;
+                AT.numCols = A.numRows;
+                AT.nnz = A.nnz;
 
-                for (int i = 0; i < compressedCoord.values.size(); ++i) {
-                    int row = compressedCoord.rowCoord[i];
-                    int col = compressedCoord.colCoord[i];
-                    T value = compressedCoord.values[i];
-                    returnValues[row][col] = value;
+                for (int i = 0; i < A.colCoord.size(); ++i) {
+                    AT.colCoord.push_back(A.rowCoord.at(i));
+                    AT.rowCoord.push_back(A.colCoord.at(i));
+                    AT.values.push_back(A.values.at(i));
                 }
 
-                for (int i = 0; i < compressedCoord.numRows; ++i) {
-                    for (int j = 0; j < compressedCoord.numCols; ++j) {
-                        if (returnValues[i][j] != 0) {
-                            returnMatrix.rowCoord.push_back(i);
-                            returnMatrix.colCoord.push_back(j);
-                            returnMatrix.values.push_back(returnValues[i][j]);
+                for (int i = 0; i < A.values.size(); ++i) {
+                    int min_index = i;
+                    for (int j = i+1; j < A.values.size(); ++j) {
+                        if (AT.rowCoord[j] < AT.rowCoord[min_index]) {
+                            min_index = j;
                         }
+                    }
+
+                    if (min_index != i) {
+                        std::swap(AT.colCoord[min_index], AT.colCoord[i]);
+                        std::swap(AT.rowCoord[min_index], AT.rowCoord[i]);
+                        std::swap(AT.values[min_index], AT.values[i]);
                     }
                 }
 
-                return returnMatrix;
+                return AT;
             }
     
     std::vector<std::vector<double>> load_fileCOO(std::string fileName) {
