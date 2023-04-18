@@ -103,3 +103,42 @@ T find_max_CSR(CSRMatrix<T> m1)
     );
 }
 }
+#include <chrono>
+class timer {
+public:
+    std::chrono::time_point<std::chrono::high_resolution_clock> lastTime;
+    timer() : lastTime(std::chrono::high_resolution_clock::now()) {}
+    inline double elapsed() {
+        std::chrono::time_point<std::chrono::high_resolution_clock> thisTime=std::chrono::high_resolution_clock::now();
+        double deltaTime = std::chrono::duration<double>(thisTime-lastTime).count();
+        lastTime = thisTime;
+        return deltaTime;
+    }
+};
+// int main() {
+//     CSRMatrix<double> m1 = load_fileCSR<double>("../../data/matrices/kmer_V1r.mtx");
+//     CSRMatrix<double> m2 = add_matrixCSR(m1,m1);
+//     double parallelMaxVal = 0;
+//     timer stopwatch;
+//     tbb::task_arena arena(12);
+// 		arena.execute([&]() {
+//             parallelMaxVal = parallel::find_max_CSR<double>(m2);
+//     });
+
+//     //double parallel = parallel::find_max_CSR<double>(m2);
+//     cerr<< stopwatch.elapsed() << " parallel" << std::endl;
+
+
+//     //CSRMatrix<double> m3 = add_matrixCSR(m1,m1);
+//     double serial = find_max_CSR<double>(m2);
+//     cerr<< stopwatch.elapsed() << " serial" << std::endl;
+
+
+//     const auto processor_count = std::thread::hardware_concurrency();
+//     cerr<< processor_count << std::endl;
+//     if(serial == parallelMaxVal){
+//         return 0;
+//     }
+
+//     return serial;
+// }
