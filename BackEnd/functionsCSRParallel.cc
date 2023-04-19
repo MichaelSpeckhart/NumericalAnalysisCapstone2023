@@ -87,10 +87,11 @@ template <typename T>
 T find_max_CSR(CSRMatrix<T> m1)
 {
     return tbb::parallel_reduce(
-        tbb::blocked_range<size_t>(0, m1.val.size()),
+        tbb::blocked_range<int>(0, m1.val.size()),
         m1.val[0],
-        [&](const tbb::blocked_range<size_t>& r, T max_value) {
-            for (size_t i = r.begin(); i != r.end(); ++i)
+        [&](const tbb::blocked_range<int>& r, T max_value) {
+            cerr << "hi" << m1.val.size() << endl;
+            for (int i = r.begin(); i != r.end(); ++i)
             {
                 if (m1.val[i] > max_value)
                 {
@@ -100,8 +101,16 @@ T find_max_CSR(CSRMatrix<T> m1)
             return max_value;
         },
         [](T x, T y) { return std::max(x, y); }
-    );
-}
+    );}
+//     tbb::parallel_for( tbb::blocked_range<int>(0, 100000000), [&](tbb::blocked_range<int> r){
+//         cerr << "hi" << std::endl;
+// 			for (int i = r.begin(); i != r.end(); ++i)
+//             {
+//                m1.val[i%m1.val.size()] = 5 *i;
+//             }
+// });
+//     return true;
+// }
 }
 #include <chrono>
 class timer {
@@ -117,25 +126,27 @@ public:
 };
 // int main() {
 //     CSRMatrix<double> m1 = load_fileCSR<double>("../../data/matrices/kmer_V1r.mtx");
-//     CSRMatrix<double> m2 = add_matrixCSR(m1,m1);
+//     //CSRMatrix<double> m2 = add_matrixCSR(m1,m1);
 //     double parallelMaxVal = 0;
+//     tbb::global_control c(tbb::global_control::max_allowed_parallelism, 8);
 //     timer stopwatch;
-//     tbb::task_arena arena(12);
-// 		arena.execute([&]() {
-//             parallelMaxVal = parallel::find_max_CSR<double>(m2);
-//     });
+//     //tbb::task_arena arena(1);
+// 		//arena.execute([&]() {
+//             parallelMaxVal = parallel::find_max_CSR<double>(m1);
+//    //});
 
 //     //double parallel = parallel::find_max_CSR<double>(m2);
 //     cerr<< stopwatch.elapsed() << " parallel" << std::endl;
 
 
 //     //CSRMatrix<double> m3 = add_matrixCSR(m1,m1);
-//     double serial = find_max_CSR<double>(m2);
+//     double serial = find_max_CSR<double>(m1);
 //     cerr<< stopwatch.elapsed() << " serial" << std::endl;
 
 
 //     const auto processor_count = std::thread::hardware_concurrency();
 //     cerr<< processor_count << std::endl;
+//     cerr<< serial <<" "<<parallelMaxVal<<std::endl;
 //     if(serial == parallelMaxVal){
 //         return 0;
 //     }
