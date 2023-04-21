@@ -4,21 +4,16 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <iomanip>
+#include <numeric>
+#include <algorithm>
+#include <map>
+#include <unordered_map>
 
-#include "tbb/parallel_for.h"
-#include "tbb/parallel_reduce.h"
-#include "tbb/blocked_range2d.h"
+#include "tbb/tbb.h"
 
 
-//global variables
-//rows
-//columns
-//number of non-zero integers
-
-//Rather than create three separate vectors, could store one vector with a struct that consists of the
-//coordinates and the values all as one.
-
-namespace COO {
+namespace COOParallel {
 
     /**
      * @brief Compressed Coordinate Structure implementation
@@ -30,12 +25,12 @@ namespace COO {
 
     //save position and value of non-zero elements
         public:
-            std::vector<int> rowCoord;
-            std::vector<int> colCoord;
-            std::vector<int> values;
+            std::vector<size_t> rowCoord;
+            std::vector<size_t> colCoord;
+            std::vector<T> values;
             size_t numRows;
             size_t numCols;
-            size_t nnz;         
+            size_t nnz; //number of non zero elements        
     };
 
     /**
@@ -47,7 +42,7 @@ namespace COO {
      * @return double 
      */
     template<typename T>
-        T get_matrixCOO(COOMatrix<T> compressedCoord, int row, int col) {
+        T get_matrixCOO(COOMatrix<T> compressedCoord, size_t row, size_t col) {
             if (compressedCoord.numRows < row) {
                 throw std::invalid_argument("Row is not within range\n");
             }
@@ -76,9 +71,11 @@ namespace COO {
      * @return COOMatrix 
      */
     template<typename T>
-        COOMatrix<T> from_vector(std::vector<std::vector<T>> denseMatrix) {
+        COOMatrix<T> from_vector(std::vector<std::vector<T>>& denseMatrix) {
             size_t nnz_id = 0;
-            COOMatrix<T> coo;
+            COO::COOMatrix<T> coo;
+            coo.numRows = denseMatrix.size();
+            coo.numCols = denseMatrix.at(0).size();
             for (size_t i = 0; i < denseMatrix.size(); ++i) {
                 for (size_t j = 0; j < denseMatrix[i].size(); ++j) {
                     if (denseMatrix[i][j] != 0) {
@@ -86,6 +83,7 @@ namespace COO {
                         coo.colCoord.push_back(j);
                         coo.values.push_back(denseMatrix[i][j]);
                         nnz_id++;
+                        coo.nnz += 1;
                     }
                 }
             }
@@ -116,7 +114,6 @@ namespace COO {
                 }
                 dense.push_back(rowVector);
             }
-
             return dense;
         }
 
@@ -133,14 +130,24 @@ namespace COO {
                 throw std::invalid_argument("Error: no values within the COO matrix\n");
                 return 0;
             }
-            T min_val = compressedCoord.values[0];
-            for (auto &value : compressedCoord.values) {
-                if (value < min_val) {
-                    min_val = value;
-                }
-            }
+            
+            const int valueSize = static_cast<int>(compressedCoord.values.size());
 
-            return min_val;
+            size_t minVal = tbb::parallel_reduce(
+                tbb::blocked_range<std::vector<size_t>::iterator>(compressedCoord.values.begin(), compressedCoord.values.end()),
+                std::numeric_limits<size_t>::max(),
+                [&](const tbb::blocked_range<std::vector<size_t>::iterator>& range, size_t init) {
+                    for (auto it = range.begin(); it != range.end(); ++it) {
+                        init = std::min(init, *it);
+                    }
+                    return init;
+                },
+                [&](size_t x, size_t y) {
+                    return std::min(x,y);
+                }
+            );
+
+            return minVal;
         }
 
     /**
@@ -156,14 +163,22 @@ namespace COO {
                 throw std::invalid_argument("Error: no values within the COO matrix\n");
                 return 0;
             }
-            T max_val = compressedCoord.values[0];
-            for (auto &value : compressedCoord.values) {
-                if (value > max_val) {
-                    max_val = value;
+            
+            size_t maxVal = tbb::parallel_reduce(
+                tbb::blocked_range<std::vector<size_t>::iterator>(compressedCoord.values.begin(), compressedCoord.values.end()),
+                std::numeric_limits<size_t>::max(),
+                [&](const tbb::blocked_range<std::vector<size_t>::iterator>& range, size_t init) {
+                    for (auto it = range.begin(); it != range.end(); ++it) {
+                        init = std::max(init, *it);
+                    }
+                    return init;
+                },
+                [&](size_t x, size_t y) {
+                    return std::max(x,y);
                 }
-            }
+            );
 
-            return max_val;
+            return maxVal;
         }
 
     /**
@@ -179,10 +194,14 @@ namespace COO {
                 throw std::invalid_argument("Error: cannot zero out matrix\n");
             }
 
-            const int valueSize = static_cast<int>(compressedCoord.values.size());
-            for (size_t i = 0; i < valueSize; ++i) {
-                compressedCoord.values.at(i) = compressedCoord.values.at(i) * scalar;
-            }
+            const size_t valueSize = static_cast<size_t>(compressedCoord.values.size());
+            tbb::parallel_for(tbb::blocked_range<size_t>(0, valueSize),
+                [&](const tbb::blocked_range<size_t>& range) {
+                    for (auto it = range.begin(); it != range.end(); ++it) {
+                        compressedCoord.values.at(i) = compressedCoord.values.at(i) * scalar;
+                    }
+            });
+
 
             return compressedCoord;
         }
@@ -199,10 +218,13 @@ namespace COO {
             if (scalar == 0) {
                 throw std::invalid_argument("Error: cannot divide by zero\n");
             }
-
-            for (size_t i = 0; i < compressedCoord.values.size(); ++i) {
-                compressedCoord.values.at(i) = compressedCoord.values.at(i) / scalar;
-            }
+            const size_t valueSize = static_cast<size_t>(compressedCoord.values.size());
+            tbb::parallel_for(tbb::blocked_range<size_t>(0, valueSize),
+                [&](const tbb::blocked_range<size_t>& range) {
+                    for (auto it = range.begin(); it != range.end(); ++it) {
+                        compressedCoord.values.at(i) = compressedCoord.values.at(i) / scalar;
+                    }
+            });
 
             return compressedCoord;
         }
@@ -216,6 +238,7 @@ namespace COO {
      */
     template<typename T>
         void scalar_add_matrixCOO(COOMatrix<T> &compressedCoord, int scalar) {
+            //No modification, return nothing
             if (scalar == 0) {
                 return;
             }
@@ -251,96 +274,116 @@ namespace COO {
      * @param compressedCoord2 
      * @return COO 
      */
-    template<typename T>
-        COOMatrix<T> add_matrixCOO(COOMatrix<T> compressedCoord1, COOMatrix<T> compressedCoord2) {
-            //Arguments do not pass the required checks for matrix addition, must both be same size
+    template <typename T>
+        COOMatrix<T> add_matrixCOO(const COOMatrix<T>& compressedCoord1, const COOMatrix<T>& compressedCoord2) {
             if (compressedCoord1.numRows != compressedCoord2.numRows) {
-                throw std::invalid_argument("Error: Matrices do not have the same number of rows\n");
+                throw std::invalid_argument("The number of rows in the first matrix must match the number of rows in the second matrix.");
             }
             if (compressedCoord1.numCols != compressedCoord2.numCols) {
-                throw std::invalid_argument("Error: Matrices do not have the same number of columns\n");
+                throw std::invalid_argument("The number of columns in the first matrix must match the number of columns in the second matrix.");
             }
 
-            COOMatrix<T> returnMatrix;
-            returnMatrix.numRows = compressedCoord1.numRows;
-            returnMatrix.numCols = compressedCoord1.numCols;
-            size_t i = 0;
-            size_t j = 0;
-            size_t k = 0;
-            while (i < compressedCoord1.numRows && j < compressedCoord2.numRows) {
-                if (compressedCoord1.rowCoord.at(i) < compressedCoord2.rowCoord.at(j) 
-                    || compressedCoord1.rowCoord.at(i) == compressedCoord2.rowCoord.at(j) 
-                    && compressedCoord1.colCoord.at(i) < compressedCoord2.colCoord.at(j)) {
-                        returnMatrix.values.push_back(compressedCoord1.values.at(i));
-                        i++;
-                        k++;
-                } else if (compressedCoord1.rowCoord.at(i) > compressedCoord2.rowCoord.at(j)
-                            || compressedCoord1.rowCoord.at(i) == compressedCoord2.rowCoord.at(j)
-                            && compressedCoord1.colCoord.at(i) > compressedCoord2.colCoord.at(j)) {
-                        returnMatrix.values.push_back(compressedCoord2.values.at(j));
-                        j++;
-                        k++;
-                } else {
-                    returnMatrix.rowCoord.push_back(compressedCoord1.rowCoord.at(i));
-                    returnMatrix.colCoord.push_back(compressedCoord1.colCoord.at(i));
-                    returnMatrix.values.push_back(compressedCoord1.values.at(i) + compressedCoord2.values.at(j));
+            std::vector<size_t> rowCoord;
+            std::vector<size_t> colCoord;
+            std::vector<T> values;
+
+            size_t i = 0, j = 0;
+            while (i < compressedCoord1.values.size() && j < compressedCoord2.values.size()) {
+                size_t aRow = compressedCoord1.rowCoord[i];
+                size_t bRow = compressedCoord2.rowCoord[j];
+                size_t aCol = compressedCoord1.colCoord[i];
+                size_t bCol = compressedCoord2.colCoord[j];
+                if (aRow < bRow || (aRow == bRow && aCol < bCol)) {
+                    rowCoord.push_back(aRow);
+                    colCoord.push_back(aCol);
+                    values.push_back(compressedCoord1.values[i]);
+                    i++;
+                }
+                else if (aRow > bRow || (aRow == bRow && aCol > bCol)) {
+                    rowCoord.push_back(bRow);
+                    colCoord.push_back(bCol);
+                    values.push_back(compressedCoord2.values[j]);
+                    j++;
+                }
+                else {
+                    rowCoord.push_back(aRow);
+                    colCoord.push_back(aCol);
+                    values.push_back(compressedCoord1.values[i] + compressedCoord2.values[j]);
                     i++;
                     j++;
-                    k++;
                 }
             }
-
-            while (i < compressedCoord1.numRows) {
-                returnMatrix.values.push_back(compressedCoord1.values.at(i));
+            while (i < compressedCoord1.values.size()) {
+                rowCoord.push_back(compressedCoord1.rowCoord[i]);
+                colCoord.push_back(compressedCoord1.colCoord[i]);
+                values.push_back(compressedCoord1.values[i]);
                 i++;
-                k++;
             }
-            while (j < compressedCoord2.numRows) {
-                returnMatrix.values.push_back(compressedCoord2.values.at(j));
+            while (j < compressedCoord2.values.size()) {
+                rowCoord.push_back(compressedCoord2.rowCoord[j]);
+                colCoord.push_back(compressedCoord2.colCoord[j]);
+                values.push_back(compressedCoord2.values[j]);
                 j++;
-                k++;
             }
 
-            return returnMatrix;
+            COOMatrix<T> C;
+            C.numRows = compressedCoord1.numRows;
+            C.numCols = compressedCoord1.numCols;
+            C.nnz = values.size();
+            C.rowCoord = rowCoord;
+            C.colCoord = colCoord;
+            C.values = values;
+
+            return C;
         }
 
-        template<typename T>
-            COOMatrix<T> multiply_matrixCOO(COOMatrix<T> compressedCoord1, COOMatrix<T> compressedCoord2) {
-                //Arguments do not pass requirements for matrix multiplication, must be pxn * mxp
-                if (compressedCoord1.numRows != compressedCoord2.numCols) {
-                    throw std::invalid_argument("The number of columns in the first matrix must match the number of rows in the second matrix.\n");
+        /**
+         * @brief 
+         * 
+         * @tparam T 
+         * @param compressedCoord1 
+         * @param compressedCoord2 
+         * @return COOMatrix<T> 
+         */
+        template <typename T>
+            COOMatrix<T> multiply_matrixCOO(const COOMatrix<T>& compressedCoord1, const COOMatrix<T>& compressedCoord2) {
+                if (compressedCoord1.numCols != compressedCoord2.numRows) {
+                    throw std::invalid_argument("The number of columns in the first matrix must match the number of rows in the second matrix.");
                 }
+ 
+
                 COOMatrix<T> returnMatrix;
                 returnMatrix.numRows = compressedCoord1.numRows;
                 returnMatrix.numCols = compressedCoord2.numCols;
-
-                for (int i = 0; i < compressedCoord1.numRows; ++i) {
-                    std::vector<T> row_data(returnMatrix.numCols, 0);
-
-                    for (int j = compressedCoord1.rowCoord[i]; j < compressedCoord1.rowCoord[i+1]; ++j) {
-                        int colA = compressedCoord1.colCoord[j];
-                        T valA = compressedCoord1.values[j];
-
-                        for (int k = compressedCoord2.rowCoord[colA]; k < compressedCoord2.rowCoord[colA + 1]; ++k) {
-                            int colB = compressedCoord2.colCoord[k];
-                            T valB = compressedCoord2.values[k];
-
-                            row_data[colB] += valA * valB;
+                
+                
+                // compute dot products of rows of A and columns of B
+                for (size_t i = 0; i < compressedCoord1.rowCoord.size(); i++) {
+                    for (size_t j = 0; j < compressedCoord2.rowCoord.size(); j++) {
+                        if (compressedCoord1.colCoord[i] == compressedCoord2.rowCoord[j]) {
+                            size_t row = compressedCoord1.rowCoord[i];
+                            size_t col = compressedCoord2.colCoord[j];
+                            T val = compressedCoord1.values[i] * compressedCoord2.values[j];
+                            size_t k = 0;
+                            while (k < returnMatrix.rowCoord.size() && (returnMatrix.rowCoord[k] < row || (returnMatrix.rowCoord[k] == row && returnMatrix.colCoord[k] < col))) {
+                                k++;
+                            }
+                            if (k == returnMatrix.rowCoord.size() || (returnMatrix.rowCoord[k] != row || returnMatrix.colCoord[k] != col)) {
+                                returnMatrix.rowCoord.insert(returnMatrix.rowCoord.begin() + k, row);
+                                returnMatrix.colCoord.insert(returnMatrix.colCoord.begin() + k, col);
+                                returnMatrix.values.insert(returnMatrix.values.begin() + k, val);
+                            } else {
+                                returnMatrix.values[k] += val;
+                            }
                         }
                     }
-
-                    for (int j = 0; j < returnMatrix.numCols; ++j) {
-                        if (row_data[j] != 0) {
-                            returnMatrix.values.push_back(row_data[j]);
-                            returnMatrix.colCoord.push_back(j);
-                        }
-                    }
-
-                    returnMatrix.rowCoord.push_back(returnMatrix.values.size());
                 }
 
                 return returnMatrix;
+                
             }
+
+
 
         /**
          * @brief 
@@ -349,38 +392,48 @@ namespace COO {
          * @param compressedCoord 
          * @return COOMatrix<T> 
          */
-        template<typename T>
-            COOMatrix<T> transpose_matrixCOO(COOMatrix<T> A) {
+        template <typename T>
+            COOMatrix<T> transpose_matrixCOO(const COOMatrix<T>& compressedCoord) {
                 // Create a new instance of the COOMatrix class to hold the transposed matrix
-                COOMatrix<T> AT;
+                COOMatrix<T> compressedCoordT;
 
                 // Set the number of rows, columns, and non-zero elements in the transposed matrix to be the same as the original matrix
-                AT.numRows = A.numCols;
-                AT.numCols = A.numRows;
-                AT.nnz = A.nnz;
+                compressedCoordT.numRows = compressedCoord.numCols;
+                compressedCoordT.numCols = compressedCoord.numRows;
+                compressedCoordT.nnz = compressedCoord.nnz;
 
-                for (int i = 0; i < A.colCoord.size(); ++i) {
-                    AT.colCoord.push_back(A.rowCoord.at(i));
-                    AT.rowCoord.push_back(A.colCoord.at(i));
-                    AT.values.push_back(A.values.at(i));
+                for (size_t i = 0; i < compressedCoord.colCoord.size(); ++i) {
+                    compressedCoordT.colCoord.push_back(compressedCoord.rowCoord.at(i));
+                    compressedCoordT.rowCoord.push_back(compressedCoord.colCoord.at(i));
+                    compressedCoordT.values.push_back(compressedCoord.values.at(i));
                 }
 
-                for (int i = 0; i < A.values.size(); ++i) {
-                    int min_index = i;
-                    for (int j = i+1; j < A.values.size(); ++j) {
-                        if (AT.rowCoord[j] < AT.rowCoord[min_index]) {
+                for (size_t i = 0; i < compressedCoord.values.size(); ++i) {
+                    size_t min_index = i;
+                    for (size_t j = i+1; j < compressedCoord.values.size(); ++j) {
+                        if (compressedCoordT.rowCoord[j] < compressedCoordT.rowCoord[min_index]) {
                             min_index = j;
                         }
                     }
 
                     if (min_index != i) {
-                        std::swap(AT.colCoord[min_index], AT.colCoord[i]);
-                        std::swap(AT.rowCoord[min_index], AT.rowCoord[i]);
-                        std::swap(AT.values[min_index], AT.values[i]);
+                        std::swap(compressedCoordT.colCoord[min_index], compressedCoordT.colCoord[i]);
+                        std::swap(compressedCoordT.rowCoord[min_index], compressedCoordT.rowCoord[i]);
+                        std::swap(compressedCoordT.values[min_index], compressedCoordT.values[i]);
                     }
                 }
 
-                return AT;
+                return compressedCoordT;
+
+            }
+
+
+
+
+
+        template<typename T>
+            void guassian_jordan_elimination(COOMatrix<T> &compressedCoord) {
+                
             }
     
     std::vector<std::vector<double>> load_fileCOO(std::string fileName) {
@@ -400,5 +453,28 @@ namespace COO {
         file.close();
         return matrix;
     }
+}
+
+#include <chrono>
+class timer {
+public:
+    std::chrono::time_point<std::chrono::high_resolution_clock> lastTime;
+    timer() : lastTime(std::chrono::high_resolution_clock::now()) {}
+    inline double elapsed() {
+        std::chrono::time_point<std::chrono::high_resolution_clock> thisTime=std::chrono::high_resolution_clock::now();
+        double deltaTime = std::chrono::duration<double>(thisTime-lastTime).count();
+        lastTime = thisTime;
+        return deltaTime;
+    }
+};
+
+using namespace COOParallel;
+
+int main() {
+    COOParallel::COOMatrix<double> m1;
+    double parallel = 
+    find_max_COO<double>(m1);
+    
+    
 }
 

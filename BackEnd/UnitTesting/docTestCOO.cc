@@ -52,16 +52,20 @@ TEST_CASE("testing COO transpose") {
     vector<vector<int> > array = {{1,0,0},{4,5,6},{0,8,9}};
 
 
-    COO::COOMatrix<int> m1 = COO::from_vector<int>(array);
+    COO::COOMatrix<int> m1 = COO::from_vector(array);
 
-    COO::COOMatrix<int> m2 = COO::transpose_matrixCOO<int>(m1);
+    COO::COOMatrix<int> m2 = COO::transpose_matrixCOO(m1);
     vector<vector<int> > transposeResultExpected = {{1,4,0},{0,5,8},{0,6,9}};
     //check the transpose
     CHECKCOO(m2,transposeResultExpected);
 }
 
+// TEST_CASE("testing COO scalar add") {
+
+// }
+
 TEST_CASE("testing COO multiply") {
-    vector<vector<int> > array = {{1,0,0},{4,5,6},{0,8,9}};
+    vector<vector<int> > array = {{1,0,0},{4,5,6},{0,8,9}}; 
     vector<vector<int> > array2 = {{0,2,3},{0,-5,0},{7,8,0}};
 
     COO::COOMatrix<int> m1 = COO::from_vector<int>(array);
