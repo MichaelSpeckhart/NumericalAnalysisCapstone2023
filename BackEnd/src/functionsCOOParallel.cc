@@ -472,7 +472,7 @@ using namespace COOParallel;
 
 int main() {
     COOParallel::COOMatrix<double> m1;
-    double parallel = 
+    double parallel;
     find_max_COO<double>(m1);
     
     
