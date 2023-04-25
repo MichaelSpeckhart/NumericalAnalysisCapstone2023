@@ -10,18 +10,10 @@
 #include <map>
 #include <unordered_map>
 
+#include "tbb/tbb.h"
 
 
-//global variables
-//rows
-//columns
-//number of non-zero integers
-
-
-//Rather than create three separate vectors, could store one vector with a struct that consists of the
-//coordinates and the values all as one.
-
-namespace COO {
+namespace COOParallel {
 
     /**
      * @brief Compressed Coordinate Structure implementation
@@ -33,9 +25,9 @@ namespace COO {
 
     //save position and value of non-zero elements
         public:
-            std::vector<int> rowCoord;
-            std::vector<int> colCoord;
-            std::vector<int> values;
+            std::vector<size_t> rowCoord;
+            std::vector<size_t> colCoord;
+            std::vector<T> values;
             size_t numRows;
             size_t numCols;
             size_t nnz; //number of non zero elements        
@@ -50,7 +42,7 @@ namespace COO {
      * @return double 
      */
     template<typename T>
-        T get_matrixCOO(COOMatrix<T> compressedCoord, int row, int col) {
+        T get_matrixCOO(COOMatrix<T> compressedCoord, size_t row, size_t col) {
             if (compressedCoord.numRows < row) {
                 throw std::invalid_argument("Row is not within range\n");
             }
@@ -107,8 +99,6 @@ namespace COO {
      */
     template<typename T>
         std::vector<std::vector<T>> convertCOOtoDense(COOMatrix<T> compressedCoord) {
-            std::cout << "In Dense\n";
-            std::cout << compressedCoord.numCols << " " << compressedCoord.numRows << "\n";
             std::vector<std::vector<int>> dense;
             int nnz_id = 0;
 
@@ -124,7 +114,6 @@ namespace COO {
                 }
                 dense.push_back(rowVector);
             }
-            std::cout << "End dense\n";
             return dense;
         }
 
@@ -141,14 +130,24 @@ namespace COO {
                 throw std::invalid_argument("Error: no values within the COO matrix\n");
                 return 0;
             }
-            T min_val = compressedCoord.values[0];
-            for (auto &value : compressedCoord.values) {
-                if (value < min_val) {
-                    min_val = value;
-                }
-            }
+            
+            const int valueSize = static_cast<int>(compressedCoord.values.size());
 
-            return min_val;
+            size_t minVal = tbb::parallel_reduce(
+                tbb::blocked_range<std::vector<size_t>::iterator>(compressedCoord.values.begin(), compressedCoord.values.end()),
+                std::numeric_limits<size_t>::max(),
+                [&](const tbb::blocked_range<std::vector<size_t>::iterator>& range, size_t init) {
+                    for (auto it = range.begin(); it != range.end(); ++it) {
+                        init = std::min(init, *it);
+                    }
+                    return init;
+                },
+                [&](size_t x, size_t y) {
+                    return std::min(x,y);
+                }
+            );
+
+            return minVal;
         }
 
     /**
@@ -164,14 +163,22 @@ namespace COO {
                 throw std::invalid_argument("Error: no values within the COO matrix\n");
                 return 0;
             }
-            T max_val = compressedCoord.values[0];
-            for (auto &value : compressedCoord.values) {
-                if (value > max_val) {
-                    max_val = value;
+            
+            size_t maxVal = tbb::parallel_reduce(
+                tbb::blocked_range<std::vector<size_t>::iterator>(compressedCoord.values.begin(), compressedCoord.values.end()),
+                std::numeric_limits<size_t>::max(),
+                [&](const tbb::blocked_range<std::vector<size_t>::iterator>& range, size_t init) {
+                    for (auto it = range.begin(); it != range.end(); ++it) {
+                        init = std::max(init, *it);
+                    }
+                    return init;
+                },
+                [&](size_t x, size_t y) {
+                    return std::max(x,y);
                 }
-            }
+            );
 
-            return max_val;
+            return maxVal;
         }
 
     /**
@@ -187,10 +194,14 @@ namespace COO {
                 throw std::invalid_argument("Error: cannot zero out matrix\n");
             }
 
-            const int valueSize = static_cast<int>(compressedCoord.values.size());
-            for (size_t i = 0; i < valueSize; ++i) {
-                compressedCoord.values.at(i) = compressedCoord.values.at(i) * scalar;
-            }
+            const size_t valueSize = static_cast<size_t>(compressedCoord.values.size());
+            tbb::parallel_for(tbb::blocked_range<size_t>(0, valueSize),
+                [&](const tbb::blocked_range<size_t>& range) {
+                    for (auto it = range.begin(); it != range.end(); ++it) {
+                        compressedCoord.values.at(i) = compressedCoord.values.at(i) * scalar;
+                    }
+            });
+
 
             return compressedCoord;
         }
@@ -207,10 +218,13 @@ namespace COO {
             if (scalar == 0) {
                 throw std::invalid_argument("Error: cannot divide by zero\n");
             }
-
-            for (size_t i = 0; i < compressedCoord.values.size(); ++i) {
-                compressedCoord.values.at(i) = compressedCoord.values.at(i) / scalar;
-            }
+            const size_t valueSize = static_cast<size_t>(compressedCoord.values.size());
+            tbb::parallel_for(tbb::blocked_range<size_t>(0, valueSize),
+                [&](const tbb::blocked_range<size_t>& range) {
+                    for (auto it = range.begin(); it != range.end(); ++it) {
+                        compressedCoord.values.at(i) = compressedCoord.values.at(i) / scalar;
+                    }
+            });
 
             return compressedCoord;
         }
@@ -269,8 +283,8 @@ namespace COO {
                 throw std::invalid_argument("The number of columns in the first matrix must match the number of columns in the second matrix.");
             }
 
-            std::vector<int> rowCoord;
-            std::vector<int> colCoord;
+            std::vector<size_t> rowCoord;
+            std::vector<size_t> colCoord;
             std::vector<T> values;
 
             size_t i = 0, j = 0;
@@ -347,8 +361,8 @@ namespace COO {
                 for (size_t i = 0; i < compressedCoord1.rowCoord.size(); i++) {
                     for (size_t j = 0; j < compressedCoord2.rowCoord.size(); j++) {
                         if (compressedCoord1.colCoord[i] == compressedCoord2.rowCoord[j]) {
-                            int row = compressedCoord1.rowCoord[i];
-                            int col = compressedCoord2.colCoord[j];
+                            size_t row = compressedCoord1.rowCoord[i];
+                            size_t col = compressedCoord2.colCoord[j];
                             T val = compressedCoord1.values[i] * compressedCoord2.values[j];
                             size_t k = 0;
                             while (k < returnMatrix.rowCoord.size() && (returnMatrix.rowCoord[k] < row || (returnMatrix.rowCoord[k] == row && returnMatrix.colCoord[k] < col))) {
@@ -379,37 +393,37 @@ namespace COO {
          * @return COOMatrix<T> 
          */
         template <typename T>
-            COOMatrix<T> transpose_matrixCOO(const COOMatrix<T>& A) {
+            COOMatrix<T> transpose_matrixCOO(const COOMatrix<T>& compressedCoord) {
                 // Create a new instance of the COOMatrix class to hold the transposed matrix
-                COOMatrix<T> AT;
+                COOMatrix<T> compressedCoordT;
 
                 // Set the number of rows, columns, and non-zero elements in the transposed matrix to be the same as the original matrix
-                AT.numRows = A.numCols;
-                AT.numCols = A.numRows;
-                AT.nnz = A.nnz;
+                compressedCoordT.numRows = compressedCoord.numCols;
+                compressedCoordT.numCols = compressedCoord.numRows;
+                compressedCoordT.nnz = compressedCoord.nnz;
 
-                for (int i = 0; i < A.colCoord.size(); ++i) {
-                    AT.colCoord.push_back(A.rowCoord.at(i));
-                    AT.rowCoord.push_back(A.colCoord.at(i));
-                    AT.values.push_back(A.values.at(i));
+                for (size_t i = 0; i < compressedCoord.colCoord.size(); ++i) {
+                    compressedCoordT.colCoord.push_back(compressedCoord.rowCoord.at(i));
+                    compressedCoordT.rowCoord.push_back(compressedCoord.colCoord.at(i));
+                    compressedCoordT.values.push_back(compressedCoord.values.at(i));
                 }
 
-                for (int i = 0; i < A.values.size(); ++i) {
-                    int min_index = i;
-                    for (int j = i+1; j < A.values.size(); ++j) {
-                        if (AT.rowCoord[j] < AT.rowCoord[min_index]) {
+                for (size_t i = 0; i < compressedCoord.values.size(); ++i) {
+                    size_t min_index = i;
+                    for (size_t j = i+1; j < compressedCoord.values.size(); ++j) {
+                        if (compressedCoordT.rowCoord[j] < compressedCoordT.rowCoord[min_index]) {
                             min_index = j;
                         }
                     }
 
                     if (min_index != i) {
-                        std::swap(AT.colCoord[min_index], AT.colCoord[i]);
-                        std::swap(AT.rowCoord[min_index], AT.rowCoord[i]);
-                        std::swap(AT.values[min_index], AT.values[i]);
+                        std::swap(compressedCoordT.colCoord[min_index], compressedCoordT.colCoord[i]);
+                        std::swap(compressedCoordT.rowCoord[min_index], compressedCoordT.rowCoord[i]);
+                        std::swap(compressedCoordT.values[min_index], compressedCoordT.values[i]);
                     }
                 }
 
-                return AT;
+                return compressedCoordT;
 
             }
 
@@ -439,5 +453,28 @@ namespace COO {
         file.close();
         return matrix;
     }
+}
+
+#include <chrono>
+class timer {
+public:
+    std::chrono::time_point<std::chrono::high_resolution_clock> lastTime;
+    timer() : lastTime(std::chrono::high_resolution_clock::now()) {}
+    inline double elapsed() {
+        std::chrono::time_point<std::chrono::high_resolution_clock> thisTime=std::chrono::high_resolution_clock::now();
+        double deltaTime = std::chrono::duration<double>(thisTime-lastTime).count();
+        lastTime = thisTime;
+        return deltaTime;
+    }
+};
+
+using namespace COOParallel;
+
+int main() {
+    COOParallel::COOMatrix<double> m1;
+    double parallel;
+    find_max_COO<double>(m1);
+    
+    
 }
 

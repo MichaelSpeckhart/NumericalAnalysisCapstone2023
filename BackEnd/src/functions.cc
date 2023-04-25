@@ -18,8 +18,6 @@
 #include <climits>
 #include <string>
 #include <vector>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
 #include <omp.h>
 
 using namespace std;
@@ -397,16 +395,12 @@ bool gaussian_elimination(std::vector<std::vector<double> > &A, std::vector<doub
 
     // back substitution
     for (int i = n - 1; i >= 0; i--) {
-        for (int j = i + 1; j < n; j++)
+        for (size_t j = i + 1; j < n; j++)
             b[i] -= A[i][j] * b[j];
         b[i] = b[i] / A[i][i];
     }
     return true;
 }
 
-namespace py = pybind11;
-void init_functions(py::module &m){
-  m.def("sum_matrix", &sum_matrix, "stuff");
-}
 
 
