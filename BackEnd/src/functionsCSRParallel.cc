@@ -9,6 +9,17 @@
 #include "functions.cc"
 
 #include <chrono>
+class timer {
+public:
+    std::chrono::time_point<std::chrono::high_resolution_clock> lastTime;
+    timer() : lastTime(std::chrono::high_resolution_clock::now()) {}
+    inline double elapsed() {
+        std::chrono::time_point<std::chrono::high_resolution_clock> thisTime=std::chrono::high_resolution_clock::now();
+        double deltaTime = std::chrono::duration<double>(thisTime-lastTime).count();
+        lastTime = thisTime;
+        return deltaTime;
+    }
+};
 
 namespace parallel {
 using namespace std;
@@ -157,16 +168,21 @@ bool gaussian_elimination(std::vector<std::vector<double> > &A) {
 bool gaussian_elimination_parallel(std::vector<std::vector<double> > &A) {
      // Iterate over each row in the matrix
     float pivot;
+    timer stopwatch;
     for(size_t i = 0; i < A.size() - 1; i++){
         // Pivot will be the diagonal
         pivot = A[i][i];
-
+        //stopwatch.elapsed();
         // Iterate of the remaining row elements
         tbb::parallel_for( tbb::blocked_range<size_t>(i+1, A[0].size()), [&](tbb::blocked_range<size_t> r){
             for(size_t j = r.begin(); j < r.end(); j++){
                 A[i][j] /= pivot;
             }
         });
+        // for(size_t j = i+1; j < A[0].size(); j++){
+        //     A[i][j] /= pivot;
+        // }
+        //cerr << " divide " <<  stopwatch.elapsed();
         // for(size_t j = i + 1; j < A[0].size(); j++){
         //     // Divide by the pivot
         //     A[i][j] /= pivot;
@@ -191,6 +207,7 @@ bool gaussian_elimination_parallel(std::vector<std::vector<double> > &A) {
                 A[j][i] = 0;
             }
         });
+        //cerr << " subtract " <<  stopwatch.elapsed();
         // float scale;
         // for(size_t j = i + 1; j < A.size(); j++){
         //     // Factor we will use to scale subtraction by
@@ -240,18 +257,7 @@ bool gaussian_elimination_swap(std::vector<std::vector<double> > &A) {
 }
 
 }
-#include <chrono>
-class timer {
-public:
-    std::chrono::time_point<std::chrono::high_resolution_clock> lastTime;
-    timer() : lastTime(std::chrono::high_resolution_clock::now()) {}
-    inline double elapsed() {
-        std::chrono::time_point<std::chrono::high_resolution_clock> thisTime=std::chrono::high_resolution_clock::now();
-        double deltaTime = std::chrono::duration<double>(thisTime-lastTime).count();
-        lastTime = thisTime;
-        return deltaTime;
-    }
-};
+
 #include <iomanip>
 void printMatrix(vector<vector<double>> &A) {
     // Set the width of each output element to 8 characters
@@ -269,21 +275,68 @@ void printMatrix(vector<vector<double>> &A) {
 }
 
 // int main() {
+//     std::vector<std::vector<double> > A = generate_random_matrix(2000,2000,1,10000);
+//     std::vector<std::vector<double> > B = generate_random_matrix(2000,2000,1,10000);
+//     parallel::gaussian_elimination_parallel(A);
+//     parallel::gaussian_elimination(B);
+
+//     return 0;
+// }
+
+int main() {
+    timer stopwatch;
+    std::vector<vector<double> > parallel;
+    std::vector<vector<double> > serial;
+    parallel.resize(12);
+    serial.resize(12);
+    for(size_t i = 0 ; i <12;i++){
+        for(size_t j = 0; j <5;j++){
+            std::vector<std::vector<double> > A = generate_random_matrix(2000,2000,1,10000);
+            std::vector<std::vector<double> > B = generate_random_matrix(2000,2000,1,10000);
+            tbb::task_arena arena(i+1);
+	        	arena.execute([&]() {
+                stopwatch.elapsed();
+                parallel::gaussian_elimination_parallel(A);
+                parallel[i].push_back(stopwatch.elapsed());
+            });
+            stopwatch.elapsed();
+            parallel::gaussian_elimination(B);
+            serial[i].push_back(stopwatch.elapsed());
+        }
+    }
+    for(size_t i = 0; i < parallel.size();i++){
+        double time = 0;
+        for(size_t j = 0 ; j < parallel[0].size();j++){
+            time += parallel[i][j];
+        }
+        cerr<< time/parallel[0].size() << ",";
+    }
+    cerr<< endl;
+    for(size_t i = 0; i < serial.size();i++){
+        double time = 0;
+        for(size_t j = 0 ; j < serial[0].size();j++){
+            time += serial[i][j];
+        }
+        cerr<< time/serial[0].size() << ",";
+    }
+    cerr<< endl;
+    
+
+
+    return 0;
+}
+
+// int main() {
 //     timer stopwatch;
 //     std::vector<double> parallel;
 //     std::vector<double> serial;
-//     for(size_t i = 1 ; i <16;i++){
-//         std::vector<std::vector<double> > A = generate_random_matrix(1500,1500,1,10000);
-//         std::vector<std::vector<double> > B = generate_random_matrix(1500,1500,1,10000);
-//         tbb::task_arena arena(i);
-// 	    	arena.execute([&]() {
-//             stopwatch.elapsed();
-//             parallel::gaussian_elimination_parallel(A);
-//             parallel.push_back(stopwatch.elapsed());
-//         });
-        
-        
-
+//     std::vector<int> size = {500,1000,1500,2000,2500,3000};
+//     for(size_t i = 0 ; i <size.size();i++){
+//         std::vector<std::vector<double> > A = generate_random_matrix(size[i],size[i],1,10000);
+//         std::vector<std::vector<double> > B = generate_random_matrix(size[i],size[i],1,10000);
+//         stopwatch.elapsed();
+//         parallel::gaussian_elimination_swap(A);
+//         parallel.push_back(stopwatch.elapsed());
 //         stopwatch.elapsed();
 //         parallel::gaussian_elimination(B);
 //         serial.push_back(stopwatch.elapsed());
@@ -301,32 +354,3 @@ void printMatrix(vector<vector<double>> &A) {
 
 //     return 0;
 // }
-
-int main() {
-    timer stopwatch;
-    std::vector<double> parallel;
-    std::vector<double> serial;
-    std::vector<int> size = {500,1000,1500,2000,2500,3000};
-    for(size_t i = 0 ; i <size.size();i++){
-        std::vector<std::vector<double> > A = generate_random_matrix(size[i],size[i],1,10000);
-        std::vector<std::vector<double> > B = generate_random_matrix(size[i],size[i],1,10000);
-        stopwatch.elapsed();
-        parallel::gaussian_elimination_swap(A);
-        parallel.push_back(stopwatch.elapsed());
-        stopwatch.elapsed();
-        parallel::gaussian_elimination(B);
-        serial.push_back(stopwatch.elapsed());
-    }
-    for(auto val : parallel){
-        cerr<< val << ",";
-    }
-    cerr<< endl;
-    for(auto val : serial){
-        cerr<< val << ",";
-    }
-    cerr<< endl;
-    
-
-
-    return 0;
-}
