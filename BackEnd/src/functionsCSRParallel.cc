@@ -6,6 +6,7 @@
 #include <vector>
 #include <tbb/tbb.h>
 #include "functionsCSR.cc"
+#include "functions.cc"
 
 #include <chrono>
 
@@ -111,6 +112,133 @@ T find_max_CSR(CSRMatrix<T> m1)
 // });
 //     return true;
 // }
+// gaussian elimination with partial pivoting
+// returns true if successful, false if A is singular
+// Modifies both A and b to store the results
+bool gaussian_elimination(std::vector<std::vector<double> > &A) {
+    // Iterate over each row in the matrix
+    float pivot;
+    for(size_t i = 0; i < A.size() - 1; i++){
+        // Pivot will be the diagonal
+        pivot = A[i][i];
+
+        // Iterate of the remaining row elements
+        for(size_t j = i + 1; j < A[0].size(); j++){
+            // Divide by the pivot
+            A[i][j] /= pivot;
+        }
+
+        // Do direct assignment for trivial case (self-divide)
+        A[i][i] = 1.0;
+
+        // Eliminate ith element from the jth row
+        float scale;
+        for(size_t j = i + 1; j < A.size(); j++){
+            // Factor we will use to scale subtraction by
+            scale = A[j][i];
+
+            // Iterate over the remaining columns
+            for(size_t k = i + 1; k < A.size(); k++){
+                A[j][k] -= A[i][k] * scale;
+            }
+
+            // Do direct assignment for trivial case (eliminate position)
+            A[j][i] = 0;
+        }
+    }
+    A[A.size()-1][A[0].size()-1] = 1;
+
+    return true;
+}
+
+// gaussian elimination with partial pivoting
+// returns true if successful, false if A is singular
+// Modifies both A and b to store the results
+bool gaussian_elimination_parallel(std::vector<std::vector<double> > &A) {
+     // Iterate over each row in the matrix
+    float pivot;
+    for(size_t i = 0; i < A.size() - 1; i++){
+        // Pivot will be the diagonal
+        pivot = A[i][i];
+
+        // Iterate of the remaining row elements
+        tbb::parallel_for( tbb::blocked_range<size_t>(i+1, A[0].size()), [&](tbb::blocked_range<size_t> r){
+            for(size_t j = r.begin(); j < r.end(); j++){
+                A[i][j] /= pivot;
+            }
+        });
+        // for(size_t j = i + 1; j < A[0].size(); j++){
+        //     // Divide by the pivot
+        //     A[i][j] /= pivot;
+        // }
+
+        // Do direct assignment for trivial case (self-divide)
+        A[i][i] = 1.0;
+
+        // Eliminate ith element from the jth row
+        tbb::parallel_for( tbb::blocked_range<size_t>(i+1, A.size()), [&](tbb::blocked_range<size_t> r){
+            float scale;
+            for(size_t j = r.begin(); j < r.end(); j++){
+                // Factor we will use to scale subtraction by
+                scale = A[j][i];
+
+                // Iterate over the remaining columns
+                for(size_t k = i + 1; k < A.size(); k++){
+                    A[j][k] -= A[i][k] * scale;
+                }
+
+                // Do direct assignment for trivial case (eliminate position)
+                A[j][i] = 0;
+            }
+        });
+        // float scale;
+        // for(size_t j = i + 1; j < A.size(); j++){
+        //     // Factor we will use to scale subtraction by
+        //     scale = A[j][i];
+
+        //     // Iterate over the remaining columns
+        //     for(size_t k = i + 1; k < A.size(); k++){
+        //         A[j][k] -= A[i][k] * scale;
+        //     }
+
+        //     // Do direct assignment for trivial case (eliminate position)
+        //     A[j][i] = 0;
+        // }
+    }
+    A[A.size()-1][A[0].size()-1] = 1;
+
+    return true;
+}
+// gaussian elimination with partial pivoting
+// returns true if successful, false if A is singular
+// Modifies both A and b to store the results
+bool gaussian_elimination_swap(std::vector<std::vector<double> > &A) {
+    const size_t n = A.size();
+
+    for (size_t i = 0; i < n; i++) {
+
+        // find pivot row and swap
+        size_t max = i;
+        for (size_t k = i + 1; k < n; k++)
+            if (abs(A[k][i]) > abs(A[max][i]))
+                max = k;
+        std::swap(A[i], A[max]);
+
+        // singular or nearly singular
+        if (abs(A[i][i]) <= 1e-10)
+            return false;
+
+        // pivot within A and b
+        for (size_t k = i + 1; k < n; k++) {
+            double t = A[k][i] / A[i][i];
+            for (size_t j = i; j < n; j++) {
+                A[k][j] -= A[i][j] * t;
+            }
+        }
+    }
+    return true;
+}
+
 }
 #include <chrono>
 class timer {
@@ -124,32 +252,81 @@ public:
         return deltaTime;
     }
 };
+#include <iomanip>
+void printMatrix(vector<vector<double>> &A) {
+    // Set the width of each output element to 8 characters
+    const int width = 9;
+    // Loop over each row of the matrix
+    for (size_t i = 0; i < A.size(); i++) {
+        // Loop over each element in the row
+        for (size_t j = 0; j < A[i].size(); j++) {
+            // Set the output width for the element
+            cout << setw(width) << A[i][j] << " ";
+        }
+        // End the row with a newline
+        cout << endl;
+    }
+}
+
 // int main() {
-//     CSRMatrix<double> m1 = load_fileCSR<double>("../../data/matrices/kmer_V1r.mtx");
-//     //CSRMatrix<double> m2 = add_matrixCSR(m1,m1);
-//     double parallelMaxVal = 0;
-//     tbb::global_control c(tbb::global_control::max_allowed_parallelism, 8);
 //     timer stopwatch;
-//     //tbb::task_arena arena(1);
-// 		//arena.execute([&]() {
-//             parallelMaxVal = parallel::find_max_CSR<double>(m1);
-//    //});
+//     std::vector<double> parallel;
+//     std::vector<double> serial;
+//     for(size_t i = 1 ; i <16;i++){
+//         std::vector<std::vector<double> > A = generate_random_matrix(1500,1500,1,10000);
+//         std::vector<std::vector<double> > B = generate_random_matrix(1500,1500,1,10000);
+//         tbb::task_arena arena(i);
+// 	    	arena.execute([&]() {
+//             stopwatch.elapsed();
+//             parallel::gaussian_elimination_parallel(A);
+//             parallel.push_back(stopwatch.elapsed());
+//         });
+        
+        
 
-//     //double parallel = parallel::find_max_CSR<double>(m2);
-//     cerr<< stopwatch.elapsed() << " parallel" << std::endl;
-
-
-//     //CSRMatrix<double> m3 = add_matrixCSR(m1,m1);
-//     double serial = find_max_CSR<double>(m1);
-//     cerr<< stopwatch.elapsed() << " serial" << std::endl;
-
-
-//     const auto processor_count = std::thread::hardware_concurrency();
-//     cerr<< processor_count << std::endl;
-//     cerr<< serial <<" "<<parallelMaxVal<<std::endl;
-//     if(serial == parallelMaxVal){
-//         return 0;
+//         stopwatch.elapsed();
+//         parallel::gaussian_elimination(B);
+//         serial.push_back(stopwatch.elapsed());
 //     }
+//     for(auto val : parallel){
+//         cerr<< val << ",";
+//     }
+//     cerr<< endl;
+//     for(auto val : serial){
+//         cerr<< val << ",";
+//     }
+//     cerr<< endl;
+    
 
-//     return serial;
+
+//     return 0;
 // }
+
+int main() {
+    timer stopwatch;
+    std::vector<double> parallel;
+    std::vector<double> serial;
+    std::vector<int> size = {500,1000,1500,2000,2500,3000};
+    for(size_t i = 0 ; i <size.size();i++){
+        std::vector<std::vector<double> > A = generate_random_matrix(size[i],size[i],1,10000);
+        std::vector<std::vector<double> > B = generate_random_matrix(size[i],size[i],1,10000);
+        stopwatch.elapsed();
+        parallel::gaussian_elimination_swap(A);
+        parallel.push_back(stopwatch.elapsed());
+        stopwatch.elapsed();
+        parallel::gaussian_elimination(B);
+        serial.push_back(stopwatch.elapsed());
+    }
+    for(auto val : parallel){
+        cerr<< val << ",";
+    }
+    cerr<< endl;
+    for(auto val : serial){
+        cerr<< val << ",";
+    }
+    cerr<< endl;
+    
+
+
+    return 0;
+}
