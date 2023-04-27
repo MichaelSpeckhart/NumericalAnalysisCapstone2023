@@ -479,7 +479,7 @@ namespace COOParallel {
             std::vector<double> xValues;
             std::vector<double> approxValues;
             int iterations = 0;
-            while (iterations <= maxIterations) {
+            while (iterations < maxIterations) {
                 for (size_t i = 0; i < denseMatrix.size(); ++i) {
                     double sum = 0.0;
                     for (size_t j = 0; j < denseMatrix[i].size(); ++j) {
@@ -491,6 +491,7 @@ namespace COOParallel {
                 }
 
                 xValues = approxValues;
+                iterations++;
             }
             return approxValues;
         }
