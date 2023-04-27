@@ -8,15 +8,8 @@
 #include <numeric>
 #include <algorithm>
 #include <map>
+#include <cmath>
 #include <unordered_map>
-
-
-
-//global variables
-//rows
-//columns
-//number of non-zero integers
-
 
 //Rather than create three separate vectors, could store one vector with a struct that consists of the
 //coordinates and the values all as one.
@@ -309,15 +302,86 @@ namespace COO {
                 j++;
             }
 
-            COOMatrix<T> C;
-            C.numRows = compressedCoord1.numRows;
-            C.numCols = compressedCoord1.numCols;
-            C.nnz = values.size();
-            C.rowCoord = rowCoord;
-            C.colCoord = colCoord;
-            C.values = values;
+            COOMatrix<T> returnMatrix;
+            returnMatrix.numRows = compressedCoord1.numRows;
+            returnMatrix.numCols = compressedCoord1.numCols;
+            returnMatrix.nnz = values.size();
+            returnMatrix.rowCoord = rowCoord;
+            returnMatrix.colCoord = colCoord;
+            returnMatrix.values = values;
 
-            return C;
+            return returnMatrix;
+        }
+
+        /**
+         * @brief Subtracting two COO matrices and returning the difference
+         * 
+         * @tparam T 
+         * @param compressedCoord1 
+         * @param compressedCoord2 
+         * @return COOMatrix<T> 
+         */
+        template <typename T>
+        COOMatrix<T> sub_matrixCOO(const COOMatrix<T>& compressedCoord1, const COOMatrix<T>& compressedCoord2) {
+            if (compressedCoord1.numRows != compressedCoord2.numRows) {
+                throw std::invalid_argument("The number of rows in the first matrix must match the number of rows in the second matrix.");
+            }
+            if (compressedCoord1.numCols != compressedCoord2.numCols) {
+                throw std::invalid_argument("The number of columns in the first matrix must match the number of columns in the second matrix.");
+            }
+
+            std::vector<size_t> rowCoord;
+            std::vector<size_t> colCoord;
+            std::vector<T> values;
+
+            size_t i = 0, j = 0;
+            while (i < compressedCoord1.values.size() && j < compressedCoord2.values.size()) {
+                size_t aRow = compressedCoord1.rowCoord[i];
+                size_t bRow = compressedCoord2.rowCoord[j];
+                size_t aCol = compressedCoord1.colCoord[i];
+                size_t bCol = compressedCoord2.colCoord[j];
+                if (aRow < bRow || (aRow == bRow && aCol < bCol)) {
+                    rowCoord.push_back(aRow);
+                    colCoord.push_back(aCol);
+                    values.push_back(compressedCoord1.values[i]);
+                    i++;
+                }
+                else if (aRow > bRow || (aRow == bRow && aCol > bCol)) {
+                    rowCoord.push_back(bRow);
+                    colCoord.push_back(bCol);
+                    values.push_back(compressedCoord2.values[j]);
+                    j++;
+                }
+                else {
+                    rowCoord.push_back(aRow);
+                    colCoord.push_back(aCol);
+                    values.push_back(compressedCoord1.values[i] - compressedCoord2.values[j]);
+                    i++;
+                    j++;
+                }
+            }
+            while (i < compressedCoord1.values.size()) {
+                rowCoord.push_back(compressedCoord1.rowCoord[i]);
+                colCoord.push_back(compressedCoord1.colCoord[i]);
+                values.push_back(compressedCoord1.values[i]);
+                i++;
+            }
+            while (j < compressedCoord2.values.size()) {
+                rowCoord.push_back(compressedCoord2.rowCoord[j]);
+                colCoord.push_back(compressedCoord2.colCoord[j]);
+                values.push_back(compressedCoord2.values[j]);
+                j++;
+            }
+
+            COOMatrix<T> returnMatrix;
+            returnMatrix.numRows = compressedCoord1.numRows;
+            returnMatrix.numCols = compressedCoord1.numCols;
+            returnMatrix.nnz = values.size();
+            returnMatrix.rowCoord = rowCoord;
+            returnMatrix.colCoord = colCoord;
+            returnMatrix.values = values;
+
+            return returnMatrix;
         }
 
         /**
