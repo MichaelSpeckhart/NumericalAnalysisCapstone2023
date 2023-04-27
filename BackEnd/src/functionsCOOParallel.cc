@@ -11,7 +11,9 @@
 #include <unordered_map>
 
 #include "tbb/tbb.h"
-
+// #include "tbb/blocked_range.h"
+// #include "tbb/parallel_for.h"
+// #include "tbb/parallel_reduce.h"
 
 namespace COOParallel {
 
@@ -326,15 +328,15 @@ namespace COOParallel {
                 j++;
             }
 
-            COOMatrix<T> C;
-            C.numRows = compressedCoord1.numRows;
-            C.numCols = compressedCoord1.numCols;
-            C.nnz = values.size();
-            C.rowCoord = rowCoord;
-            C.colCoord = colCoord;
-            C.values = values;
+            COOMatrix<T> returnMatrix;
+            returnMatrix.numRows = compressedCoord1.numRows;
+            returnMatrix.numCols = compressedCoord1.numCols;
+            returnMatrix.nnz = values.size();
+            returnMatrix.rowCoord = rowCoord;
+            returnMatrix.colCoord = colCoord;
+            returnMatrix.values = values;
 
-            return C;
+            return returnMatrix;
         }
 
         /**
@@ -435,24 +437,81 @@ namespace COOParallel {
             void guassian_jordan_elimination(COOMatrix<T> &compressedCoord) {
                 
             }
-    
-    std::vector<std::vector<double>> load_fileCOO(std::string fileName) {
-        std::ifstream file(fileName);
-        int num_row, num_col, num_lines;
 
-        file >> num_row >> num_col >> num_lines;
+        /**
+         * @brief As a prerequisite for the Jacobi Method, the matrix must be diagonally dominant,
+         * meaning that the elements on the diagonal indices of the matrix are greater or equal to
+         * the sum of the rest of the elements in that row.
+         * 
+         * @param denseMatrix 
+         * @return true If is diagonally dominant
+         * @return false Otherwise
+         */
+        bool diagonally_dominant(std::vector<std::vector<double>> denseMatrix) {
+            for (size_t i = 0; i < denseMatrix.size(); ++i) {
+                double sum = 0.0;
+                for (size_t j = 0; j < denseMatrix[i].size(); ++j) {
+                    if (j != i) {
+                        sum += std::abs(denseMatrix[i][j]);
+                    }
+                }
+                if (denseMatrix[i][i] < sum) {
+                    return false;
+                }
+            }
 
-        std::vector<std::vector<double>> matrix = std::vector<std::vector<double>>(num_row, std::vector<double>(num_col, 0.0));
-
-        for (int i = 0; i < num_lines; ++i) {
-            double data;
-            int row, col;
-            file >> row >> col >> data;
-            matrix[(row-1)][col-1] = data;
+            return true;
         }
-        file.close();
-        return matrix;
-    }
+
+        /**
+         * @brief The Jacobi Method is an iterative method for determining the solutions of a strictly
+         * diagonally dominant matrix A. Through each iteration, the values of x[i] are approximated through
+         * the formula x[i] = B[i]
+         * 
+         * @param denseMatrix 
+         * @param B 
+         * @param iterations 
+         */
+        std::vector<double> jacobi_method(std::vector<std::vector<double>> denseMatrix, std::vector<double> B, int maxIterations) {
+            if (diagonally_dominant(denseMatrix) == false) {
+                throw std::invalid_argument("Input matrix is not diagonally dominant");
+            }
+            std::vector<double> xValues;
+            std::vector<double> approxValues;
+            int iterations = 0;
+            while (iterations <= maxIterations) {
+                for (size_t i = 0; i < denseMatrix.size(); ++i) {
+                    double sum = 0.0;
+                    for (size_t j = 0; j < denseMatrix[i].size(); ++j) {
+                        if (j != i) {
+                            sum += denseMatrix[i][j] * xValues[j];
+                        }
+                    }
+                    approxValues[i] = (B[i] - sum) / denseMatrix[i][i];
+                }
+
+                xValues = approxValues;
+            }
+            return approxValues;
+        }
+    
+        std::vector<std::vector<double>> load_fileCOO(std::string fileName) {
+            std::ifstream file(fileName);
+            int num_row, num_col, num_lines;
+    
+            file >> num_row >> num_col >> num_lines;
+    
+            std::vector<std::vector<double>> matrix = std::vector<std::vector<double>>(num_row, std::vector<double>(num_col, 0.0));
+    
+            for (int i = 0; i < num_lines; ++i) {
+                double data;
+                int row, col;
+                file >> row >> col >> data;
+                matrix[(row-1)][col-1] = data;
+            }
+            file.close();
+            return matrix;
+        }
 }
 
 #include <chrono>
@@ -471,10 +530,6 @@ public:
 using namespace COOParallel;
 
 int main() {
-    COOParallel::COOMatrix<double> m1;
-    double parallel;
-    find_max_COO<double>(m1);
-    
     
 }
 
