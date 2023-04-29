@@ -65,12 +65,41 @@ threads = range(1,13)
 # serial = [0.0157217,0.14666,0.665039,1.9696,3.92505,7.00606]
 
 #sunlab
-threads = [1000,1500,2000]
-parallel = [0.0274525,0.0819047,0.437466]
-serial = [0.0708806,0.288978,0.919206]
+# threads = [1000,1500,2000]
+# parallel = [0.0274525,0.0819047,0.437466]
+# serial = [0.0708806,0.288978,0.919206]
 
 
-# Set the figure size and font size
+# # Set the figure size and font size
+# plt.figure(figsize=(8, 6))
+# plt.rcParams.update({'font.size': 12})
+
+# # Plot the data with a solid line and marker
+# plt.plot(threads, serial, '-o', label="serial", color='blue')
+# plt.plot(threads, parallel, '-o', label="parallel", color='red')
+
+
+
+# # Add axis labels and title
+# plt.xlabel('Size of sqaure matrix')
+# plt.ylabel('Execution Time (seconds)')
+# plt.suptitle("matrix size vs. Execution Time on sunlab smaller matrix sizes")
+# plt.title("")
+
+# # Add gridlines and legend
+# plt.grid(True)
+# plt.legend(loc='upper right')
+
+# # Save the plot to the 'graphs' folder with the name 'plot.png'
+# plt.savefig('graphs/sizeSunLabSmaller.png')
+
+
+#Matrix multiply
+threads = range(1,17)
+parallel = [4.4942,2.31012,1.55787,1.20281,0.972214,0.814969,0.706975,0.617723,0.620233,0.62239,0.624258,0.625031,0.627309,0.628705,0.631192,0.632584]
+serial =   [5.15116,5.15058,5.1515,5.14258,5.15507,5.15455,5.14456,5.15081,5.15297,5.14289,5.15003,5.14435,5.14447,5.15044,5.15325,5.14471]
+
+#Set the figure size and font size
 plt.figure(figsize=(8, 6))
 plt.rcParams.update({'font.size': 12})
 
@@ -81,14 +110,14 @@ plt.plot(threads, parallel, '-o', label="parallel", color='red')
 
 
 # Add axis labels and title
-plt.xlabel('Size of sqaure matrix')
+plt.xlabel('Threads')
 plt.ylabel('Execution Time (seconds)')
-plt.suptitle("matrix size vs. Execution Time on sunlab smaller matrix sizes")
-plt.title("")
+plt.suptitle("Threads vs. Execution Time Sparse Matrix Multiplicaton")
+plt.title("TSOPF_RS_b39_c30 X T(TSOPF_RS_b39_c30) on sunlab, 1,079,986 elements")
 
 # Add gridlines and legend
 plt.grid(True)
 plt.legend(loc='upper right')
 
 # Save the plot to the 'graphs' folder with the name 'plot.png'
-plt.savefig('graphs/sizeSunLabSmaller.png')
+plt.savefig('graphs/threadmult.png')
