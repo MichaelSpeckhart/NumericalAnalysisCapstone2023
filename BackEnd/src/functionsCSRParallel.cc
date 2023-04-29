@@ -91,6 +91,69 @@ CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2){
     return returnMatrix;
 }
 
+/// @brief Multiplies two compressed sparse row(CSR) matrixes
+/// @exception The number of columns in m1 must equal the number of rows in m2
+/// @tparam T The type of the matrixes
+/// @param m1 The first CSR matrix to multiply
+/// @param m2 The second CSR matrix to multiply
+/// @return The dot product of m1 and m2
+template <typename T>
+CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
+{
+    if (m1.numColumns != m2.numRows)
+    {
+        throw std::invalid_argument("The number of columns in the first matrix must match the number of rows in the second matrix.");
+    }
+    CSRMatrix<T> m2t = transpose_matrixCSR(m2);
+    CSRMatrix<T> returnMatrix = tbb::parallel_reduce(tbb::blocked_range<int>(0, m1.numRows), CSRMatrix<T>(),
+        [m1,m2t](const tbb::blocked_range<int>& r, CSRMatrix<T> v) -> CSRMatrix<T> {
+        for (auto i = r.begin(); i < r.end(); i++) {
+        for (size_t j = 0; j < m2t.numRows; j++)
+        {
+            T sum = 0;
+            size_t a1 = m1.row_ptr.at(i);
+            size_t b1 = m1.row_ptr.at(i + 1);
+            size_t a2 = m2t.row_ptr.at(j);
+            size_t b2 = m2t.row_ptr.at(j + 1);
+            while (a1 < b1 && a2 < b2)
+            {
+                if (m1.col_ind.at(a1) < m2t.col_ind.at(a2))
+                {
+                    a1++;
+                }
+                else if (m1.col_ind.at(a1) > m2t.col_ind.at(a2))
+                {
+                    a2++;
+                }
+                else if (m1.col_ind.at(a1) == m2t.col_ind.at(a2))
+                {
+                    sum += m1.val.at(a1) * m2t.val.at(a2);
+                    a1++;
+                    a2++;
+                }
+            }
+            if (sum != 0)
+            {
+                v.val.push_back(sum);
+                v.col_ind.push_back(j);
+            }
+        }
+        v.row_ptr.push_back(i+1);
+    }
+    return v;},
+    [m1,m2](CSRMatrix<T> v1, CSRMatrix<T> v2) -> CSRMatrix<T> {
+            v1.row_ptr.insert(v1.row_ptr.end(),v2.row_ptr.cbegin(),v2.row_ptr.cend());
+            v1.col_ind.insert(v1.col_ind.end(),v2.col_ind.cbegin(),v2.col_ind.cend());
+            v1.val.insert(v1.val.end(),v2.val.cbegin(),v2.val.cend());
+            return v1;
+        }
+    );
+    returnMatrix.numRows = m1.numRows;
+    returnMatrix.numColumns = m1.numColumns;
+    returnMatrix.row_ptr.insert(returnMatrix.row_ptr.begin(),1,0);
+    return returnMatrix;
+}
+
 /// @brief Find the max value in a compressed sparse row(CSR) matrix
 /// @tparam T The type of the matrix
 /// @param m The CSR matrix to find the max value of
