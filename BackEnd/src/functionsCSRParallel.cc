@@ -149,7 +149,7 @@ CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
         }
     );
     returnMatrix.numRows = m1.numRows;
-    returnMatrix.numColumns = m1.numColumns;
+    returnMatrix.numColumns = m2.numColumns;
     returnMatrix.row_ptr.insert(returnMatrix.row_ptr.begin(),1,0);
     return returnMatrix;
 }
@@ -346,48 +346,48 @@ void printMatrix(vector<vector<double>> &A) {
 //     return 0;
 // }
 
-int main() {
-    timer stopwatch;
-    std::vector<vector<double> > parallel;
-    std::vector<vector<double> > serial;
-    parallel.resize(12);
-    serial.resize(12);
-    for(size_t i = 0 ; i <12;i++){
-        for(size_t j = 0; j <5;j++){
-            std::vector<std::vector<double> > A = generate_random_matrix(2000,2000,1,10000);
-            std::vector<std::vector<double> > B = generate_random_matrix(2000,2000,1,10000);
-            tbb::task_arena arena(i+1);
-	        	arena.execute([&]() {
-                stopwatch.elapsed();
-                parallel::gaussian_elimination_parallel(A);
-                parallel[i].push_back(stopwatch.elapsed());
-            });
-            stopwatch.elapsed();
-            parallel::gaussian_elimination(B);
-            serial[i].push_back(stopwatch.elapsed());
-        }
-    }
-    for(size_t i = 0; i < parallel.size();i++){
-        double time = 0;
-        for(size_t j = 0 ; j < parallel[0].size();j++){
-            time += parallel[i][j];
-        }
-        cerr<< time/parallel[0].size() << ",";
-    }
-    cerr<< endl;
-    for(size_t i = 0; i < serial.size();i++){
-        double time = 0;
-        for(size_t j = 0 ; j < serial[0].size();j++){
-            time += serial[i][j];
-        }
-        cerr<< time/serial[0].size() << ",";
-    }
-    cerr<< endl;
+// int main() {
+//     timer stopwatch;
+//     std::vector<vector<double> > parallel;
+//     std::vector<vector<double> > serial;
+//     parallel.resize(12);
+//     serial.resize(12);
+//     for(size_t i = 0 ; i <12;i++){
+//         for(size_t j = 0; j <5;j++){
+//             std::vector<std::vector<double> > A = generate_random_matrix(2000,2000,1,10000);
+//             std::vector<std::vector<double> > B = generate_random_matrix(2000,2000,1,10000);
+//             tbb::task_arena arena(i+1);
+// 	        	arena.execute([&]() {
+//                 stopwatch.elapsed();
+//                 parallel::gaussian_elimination_parallel(A);
+//                 parallel[i].push_back(stopwatch.elapsed());
+//             });
+//             stopwatch.elapsed();
+//             parallel::gaussian_elimination(B);
+//             serial[i].push_back(stopwatch.elapsed());
+//         }
+//     }
+//     for(size_t i = 0; i < parallel.size();i++){
+//         double time = 0;
+//         for(size_t j = 0 ; j < parallel[0].size();j++){
+//             time += parallel[i][j];
+//         }
+//         cerr<< time/parallel[0].size() << ",";
+//     }
+//     cerr<< endl;
+//     for(size_t i = 0; i < serial.size();i++){
+//         double time = 0;
+//         for(size_t j = 0 ; j < serial[0].size();j++){
+//             time += serial[i][j];
+//         }
+//         cerr<< time/serial[0].size() << ",";
+//     }
+//     cerr<< endl;
     
 
 
-    return 0;
-}
+//     return 0;
+// }
 
 // int main() {
 //     timer stopwatch;
