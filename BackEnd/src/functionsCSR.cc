@@ -15,14 +15,13 @@ class CSRMatrix
     //     T value;
     // };
 public:
-    size_t numRows =0, numColumns=0;
+    size_t numRows, numColumns;
     // vector<colValStruct*> rowPointersVector;
     // fist value is col_ind and the second value is the value
     // vector<colValStruct> columnValueVector;
     vector<T> val;
     vector<size_t> col_ind;
-    vector<size_t> row_ptr {0};
-    CSRMatrix() = default;
+    vector<size_t> row_ptr;
 };
 // TODO loadfile
 // TODO savefile
