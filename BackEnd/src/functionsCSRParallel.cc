@@ -87,7 +87,7 @@ CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2){
     );
     returnMatrix.numRows = m1.numRows;
     returnMatrix.numColumns = m1.numColumns;
-    returnMatrix.row_ptr.insert(returnMatrix.row_ptr.begin(),1,0);
+    //returnMatrix.row_ptr.insert(returnMatrix.row_ptr.begin(),1,0);
     return returnMatrix;
 }
 
@@ -105,7 +105,7 @@ CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
         throw std::invalid_argument("The number of columns in the first matrix must match the number of rows in the second matrix.");
     }
     CSRMatrix<T> m2t = transpose_matrixCSR(m2);
-    CSRMatrix<T> returnMatrix = tbb::parallel_reduce(tbb::blocked_range<int>(0, m1.numRows), CSRMatrix<T>(),
+    CSRMatrix<T> returnMatrix = tbb::parallel_deterministic_reduce(tbb::blocked_range<int>(0, m1.numRows), CSRMatrix<T>(),
         [m1,m2t](const tbb::blocked_range<int>& r, CSRMatrix<T> v) -> CSRMatrix<T> {
         for (auto i = r.begin(); i < r.end(); i++) {
         for (size_t j = 0; j < m2t.numRows; j++)
