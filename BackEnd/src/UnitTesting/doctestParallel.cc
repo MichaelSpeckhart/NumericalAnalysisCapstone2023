@@ -91,13 +91,13 @@ void CHECKCSRFast(CSRMatrix<double> one, CSRMatrix<double> two){
 // }
 
 TEST_CASE("CSR multiply parallel Correctness") {
-    //CSRMatrix<double> m1 = load_fileCSR<double>("../../../data/matrices/TSOPF_RS_b39_c30.mtx");
-    CSRMatrix<double> m1 = load_fileCSR<double>("../../../data/matrices/1138_bus.mtx");
-    CSRMatrix<double> m2 = transpose_matrixCSR<double>(m1);
+    CSRMatrix<double> m1 = load_fileCSR<double>("../../../data/matrices/TSOPF_RS_b39_c30.mtx");
+    //CSRMatrix<double> m1 = load_fileCSR<double>("../../../data/matrices/1138_bus.mtx");
+    //CSRMatrix<double> m2 = transpose_matrixCSR<double>(m1);
 
-    //CSRMatrix<double> m3 = multiply_matrixCSR<double>(m1, m2);
-    //CSRMatrix<double> m4 = parallel::multiply_matrixCSR<double>(m1, m2);
-    // CHECKCSRFast(m3,m4);
+    CSRMatrix<double> m3 = multiply_matrixCSR<double>(m1, m1);
+    CSRMatrix<double> m4 = parallel::multiply_matrixCSR<double>(m1, m1);
+    CHECKCSRFast(m3,m4);
     // CHECK(m3.numRows == m4.numRows);
     // CHECK(m3.numColumns == m4.numColumns);
     // for(size_t i = 0 ; i <m3.row_ptr.size();i++){
