@@ -91,13 +91,33 @@ CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2){
     return returnMatrix;
 }
 
-/// @brief Multiplies two compressed sparse row(CSR) matrixes
-/// @exception The number of columns in m1 must equal the number of rows in m2
-/// @tparam T The type of the matrixes
-/// @param m1 The first CSR matrix to multiply
-/// @param m2 The second CSR matrix to multiply
-/// @return The dot product of m1 and m2
-//INCORRECT
+//this matrix code is correct and uses TBB, but it is slow
+// template<typename T>
+// class VectorPair{
+//     public:
+//     vector<size_t> vec1;
+//     vector<T> vec2;
+// };
+// template<typename T>
+// bool compareVectorPairFirstElement(const VectorPair<T>& a, const VectorPair<T>& b) {
+//     if (a.vec1.empty() && b.vec1.empty()) {
+//         return false;
+//     } else if (a.vec1.empty()) {
+//         return true;
+//     } else if (b.vec1.empty()) {
+//         return false;
+//     } else {
+//         return a.vec1[0] < b.vec1[0];
+//     }
+// }
+
+
+// /// @brief Multiplies two compressed sparse row(CSR) matrixes
+// /// @exception The number of columns in m1 must equal the number of rows in m2
+// /// @tparam T The type of the matrixes
+// /// @param m1 The first CSR matrix to multiply
+// /// @param m2 The second CSR matrix to multiply
+// /// @return The dot product of m1 and m2
 // template <typename T>
 // CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
 // {
@@ -105,11 +125,17 @@ CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2){
 //     {
 //         throw std::invalid_argument("The number of columns in the first matrix must match the number of rows in the second matrix.");
 //     }
+//     CSRMatrix<T> returnMatrix;
+//     returnMatrix.numRows = m1.numRows;
+//     returnMatrix.numColumns = m2.numColumns;
+//     returnMatrix.row_ptr.push_back(0);
 //     CSRMatrix<T> m2t = transpose_matrixCSR(m2);
-//     CSRMatrix<T> returnMatrix = tbb::parallel_reduce(tbb::blocked_range<int>(0, m1.numRows), CSRMatrix<T>(),
-//         [m1,m2t](const tbb::blocked_range<int>& r, CSRMatrix<T> v) -> CSRMatrix<T> {
-//         for (auto i = r.begin(); i < r.end(); i++) {
-//         for (size_t j = 0; j < m2t.numRows; j++)
+//     for (size_t i = 0; i < m1.numRows; i++)
+//     {
+//         tbb::concurrent_vector<VectorPair<T>> columns;
+//         tbb::parallel_for( tbb::blocked_range<size_t>(0, m2t.numRows), [&](tbb::blocked_range<size_t> r){
+//         VectorPair<T> v;
+//         for(size_t j = r.begin(); j < r.end(); j++)
 //         {
 //             T sum = 0;
 //             size_t a1 = m1.row_ptr.at(i);
@@ -135,44 +161,33 @@ CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2){
 //             }
 //             if (sum != 0)
 //             {
-//                 v.val.push_back(sum);
-//                 v.col_ind.push_back(j);
+//                 v.vec1.push_back(j);
+//                 v.vec2.push_back(sum);
 //             }
 //         }
-//         v.row_ptr.push_back(i+1);
-//     }
-//     return v;},
-//     [m1,m2](CSRMatrix<T> v1, CSRMatrix<T> v2) -> CSRMatrix<T> {
-//             v1.row_ptr.insert(v1.row_ptr.end(),v2.row_ptr.cbegin(),v2.row_ptr.cend());
-//             v1.col_ind.insert(v1.col_ind.end(),v2.col_ind.cbegin(),v2.col_ind.cend());
-//             v1.val.insert(v1.val.end(),v2.val.cbegin(),v2.val.cend());
-//             return v1;
+//         columns.push_back(v);
+//         });
+//         //sort and push on
+//         std::sort(columns.begin(),columns.end(),compareVectorPairFirstElement<T>);
+//         for(size_t i = 0; i <columns.size();i++){
+//             returnMatrix.col_ind.insert(returnMatrix.col_ind.end(),columns[i].vec1.cbegin(),columns[i].vec1.cend());
+//             returnMatrix.val.insert(returnMatrix.val.end(),columns[i].vec2.cbegin(),columns[i].vec2.cend());
 //         }
-//     );
-//     returnMatrix.numRows = m1.numRows;
-//     returnMatrix.numColumns = m1.numColumns;
-//     returnMatrix.row_ptr.insert(returnMatrix.row_ptr.begin(),1,0);
+//         //cerr << (returnMatrix.val.size()) << endl;
+//         returnMatrix.row_ptr.push_back(returnMatrix.val.size());
+//     }
 //     return returnMatrix;
 // }
+
+
 template<typename T>
 class VectorPair{
     public:
     vector<size_t> vec1;
     vector<T> vec2;
-};
-template<typename T>
-bool compareVectorPairFirstElement(const VectorPair<T>& a, const VectorPair<T>& b) {
-    if (a.vec1.empty() && b.vec1.empty()) {
-        return false;
-    } else if (a.vec1.empty()) {
-        return true;
-    } else if (b.vec1.empty()) {
-        return false;
-    } else {
-        return a.vec1[0] < b.vec1[0];
-    }
-}
 
+    VectorPair() : vec1(), vec2() {} // default constructor
+};
 
 /// @brief Multiplies two compressed sparse row(CSR) matrixes
 /// @exception The number of columns in m1 must equal the number of rows in m2
@@ -181,7 +196,7 @@ bool compareVectorPairFirstElement(const VectorPair<T>& a, const VectorPair<T>& 
 /// @param m2 The second CSR matrix to multiply
 /// @return The dot product of m1 and m2
 template <typename T>
-CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
+CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2,size_t threads)
 {
     if (m1.numColumns != m2.numRows)
     {
@@ -192,12 +207,18 @@ CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
     returnMatrix.numColumns = m2.numColumns;
     returnMatrix.row_ptr.push_back(0);
     CSRMatrix<T> m2t = transpose_matrixCSR(m2);
-    for (size_t i = 0; i < m1.numRows; i++)
-    {
-        tbb::concurrent_vector<VectorPair<T>> columns;
-        tbb::parallel_for( tbb::blocked_range<size_t>(0, m2t.numRows), [&](tbb::blocked_range<size_t> r){
-        VectorPair<T> v;
-        for(size_t j = r.begin(); j < r.end(); j++)
+    const auto processor_count = threads;
+    std::vector<vector<VectorPair<T>>> result;
+    result.resize(processor_count);
+    //the vector of threads
+  	std::vector<std::thread> threadPool;
+	threadPool.reserve(processor_count);
+    //lambda to run
+    auto do_work = [&](int k){
+        vector<VectorPair<T>> v;
+		for (size_t i = k; i < m1.numRows; i += processor_count){
+        VectorPair<T> row;
+        for (size_t j = 0; j < m2t.numRows; j++)
         {
             T sum = 0;
             size_t a1 = m1.row_ptr.at(i);
@@ -223,19 +244,27 @@ CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
             }
             if (sum != 0)
             {
-                v.vec1.push_back(j);
-                v.vec2.push_back(sum);
+                row.vec1.push_back(j);
+                row.vec2.push_back(sum);
             }
         }
-        columns.push_back(v);
-        });
-        //sort and push on
-        std::sort(columns.begin(),columns.end(),compareVectorPairFirstElement<T>);
-        for(size_t i = 0; i <columns.size();i++){
-            returnMatrix.col_ind.insert(returnMatrix.col_ind.end(),columns[i].vec1.cbegin(),columns[i].vec1.cend());
-            returnMatrix.val.insert(returnMatrix.val.end(),columns[i].vec2.cbegin(),columns[i].vec2.cend());
+        v.push_back(row);
         }
-        //cerr << (returnMatrix.val.size()) << endl;
+        result[k] = v;
+	};
+
+	//have the threads do the work
+	for (size_t i = 0; i < processor_count; ++i){
+      	threadPool.push_back(thread(do_work,i));
+    }
+	//join the threads
+	for(auto & val : threadPool){
+    	val.join();
+	}
+    //merge results
+    for (size_t i = 0; i < m1.numRows; i++){
+        returnMatrix.col_ind.insert(returnMatrix.col_ind.end(),result[i%processor_count][i/processor_count].vec1.cbegin(),result[i%processor_count][i/processor_count].vec1.cend());
+        returnMatrix.val.insert(returnMatrix.val.end(),result[i%processor_count][i/processor_count].vec2.cbegin(),result[i%processor_count][i/processor_count].vec2.cend());
         returnMatrix.row_ptr.push_back(returnMatrix.val.size());
     }
     return returnMatrix;
@@ -425,13 +454,11 @@ void printMatrix(vector<vector<double>> &A) {
 }
 
 // int main() {
-//     CSRMatrix<double> m1 = load_fileCSR<double>("../../../data/matrices/1138_bus.mtx");
+//     CSRMatrix<double> m1 = load_fileCSR<double>("../../data/matrices/1138_bus.mtx");
 //     //CSRMatrix<double> m2 = transpose_matrixCSR<double>(m1);
 
 //     CSRMatrix<double> m3 = multiply_matrixCSR<double>(m1, m1);
 //     CSRMatrix<double> m4 = parallel::multiply_matrixCSR<double>(m1, m1);
-//     cerr << m4.row_ptr.size() << endl;
-//     cerr << m3.row_ptr.size() << endl;
 
 //     return 0;
 // }
@@ -546,51 +573,58 @@ void printMatrix(vector<vector<double>> &A) {
 
 // int main() {
 //     timer stopwatch;
-//     std::vector<double> parallel;
-//     std::vector<double> serial;
-//     CSRMatrix<double> m1 = load_fileCSR<double>("TSOPF_RS_b39_c30.mtx");
-//     CSRMatrix<double> m2 = load_fileCSR<double>("TSOPF_RS_b39_c30.mtx");
-//     CSRMatrix<double> m5 = transpose_matrixCSR(m2);
-//     //for(size_t i = 0 ; i <size.size();i++){
-//         stopwatch.elapsed();
-//         CSRMatrix<double> m3 = parallel::multiply_matrixCSR(m1,m5);
-//         parallel.push_back(stopwatch.elapsed());
-//         stopwatch.elapsed();
-//         CSRMatrix<double> m4 = multiply_matrixCSR(m1,m5);
-//         serial.push_back(stopwatch.elapsed());
-//     //}
-//     for(auto val : parallel){
-//         cerr<< val << ",";
-//     }
-//     cerr<< endl;
-//     for(auto val : serial){
-//         cerr<< val << ",";
-//     }
-//     cerr<< endl;
-//     cout<< m1.val.size();
-//     return 0;
-// }
-
-// int main() {
-//     timer stopwatch;
 //     std::vector<vector<double> > parallel;
 //     std::vector<vector<double> > serial;
 //     parallel.resize(16);
 //     serial.resize(16);
 //     CSRMatrix<double> m1 = load_fileCSR<double>("TSOPF_RS_b39_c30.mtx");
-//     CSRMatrix<double> m2 = load_fileCSR<double>("TSOPF_RS_b39_c30.mtx");
-//     CSRMatrix<double> m3 = transpose_matrixCSR(m2);
+//     CSRMatrix<double> m3 = transpose_matrixCSR(m1);
+//     // CSRMatrix<double> one = multiply_matrixCSR(m3,m1);
+//     // CSRMatrix<double> two = parallel::multiply_matrixCSR(m3,m1,16);
+//     // if(one.numRows != two.numRows){
+//     //     cerr << "yikes" << endl;
+//     // }
+//     // if(one.numColumns != two.numColumns){
+//     //     cerr << "yikes"<< endl;
+//     // }
+//     // if(one.row_ptr.size() != two.row_ptr.size()){
+//     //     cerr << "yikes"<< endl;
+//     // }
+//     // if(one.col_ind.size() != two.col_ind.size()){
+//     //     cerr << "yikes"<< endl;
+//     // }
+//     // if(one.val.size() != two.val.size()){
+//     //     cerr << "yikes"<< endl;
+//     // }
+//     // for(size_t i = 0 ; i <one.row_ptr.size();i++){
+//     //     if(one.row_ptr[i] != two.row_ptr[i]){
+//     //     cerr << "yikes"<< endl;
+//     // }
+//     // }
+//     // for(size_t i = 0 ; i <one.col_ind.size();i++){
+//     //      if(one.col_ind[i] != two.col_ind[i]){
+//     //     cerr << "yikes"<< endl;
+//     // }
+//     // }
+//     // for(size_t i = 0 ; i <one.val.size();i++){
+//     //     if(one.val[i] != two.val[i]){
+//     //     cerr << "yikes"<< endl;
+//     // }
+//     // }
+//     // cerr<< "yay?";
 //     for(size_t i = 0 ; i <16;i++){
-//         for(size_t j = 0; j <5;j++){
-//             tbb::task_arena arena(i+1);
-// 	        	arena.execute([&]() {
-//                 stopwatch.elapsed();
-//                 parallel::multiply_matrixCSR(m1,m3);
-//                 parallel[i].push_back(stopwatch.elapsed());
-//             });
+//         for(size_t j = 0; j <1;j++){
 //             stopwatch.elapsed();
-//             multiply_matrixCSR(m1,m3);
-//             serial[i].push_back(stopwatch.elapsed());
+//             parallel::multiply_matrixCSR(m1,m3,i+1);
+//             parallel[i].push_back(stopwatch.elapsed());
+//             if(i == 0){
+//                 stopwatch.elapsed();
+//                 multiply_matrixCSR(m1,m3);
+//                 serial[i].push_back(stopwatch.elapsed());
+//             }else{
+//                 serial[i].push_back(0);
+//             }
+
 //         }
 //     }
 //     for(size_t i = 0; i < parallel.size();i++){
