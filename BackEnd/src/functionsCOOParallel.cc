@@ -496,6 +496,37 @@ namespace COOParallel {
             return approxValues;
         }
     
+        /**
+        * @brief LU Factorization of a square matrix
+        * 
+        * @param A 
+        * @return pair<vector<vector<double>>,vector<vector<double>>> 
+        */
+pair<vector<vector<double>>,vector<vector<double>>> lu_factorization_parallel(const vector<vector<double>>& A) {
+    if (A.size() != A[0].size()) {
+        throw invalid_argument("Error: Matrix must be square nxn");
+    }
+    const int n = static_cast<int>(A.size());
+    vector<vector<double>> L(n, vector<double>(n, 0.0)); 
+    vector<vector<double>> U = A; 
+
+    tbb::parallel_for(tbb::blocked_range<int>(0, n), 
+        [&] (tbb::blocked_range<int>& range) {
+            for (int i = range.begin(); i < range.end(); ++i) {
+              L[i][i] = 1.0; 
+              for (int j = i+1; j < n; ++j) {
+                double factor = U[j][i] / U[i][i]; 
+                L[i][i] = factor; 
+                for (int k = i; k < n; ++k) {
+                  U[j][k] -= factor * U[i][k]; 
+                }
+              }
+            }
+    });
+
+    return std::make_pair(L, U);
+}
+    
         std::vector<std::vector<double>> load_fileCOO(std::string fileName) {
             std::ifstream file(fileName);
             int num_row, num_col, num_lines;
