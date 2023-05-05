@@ -35,7 +35,6 @@ T find_max_CSR(CSRMatrix<T> m1)
         tbb::blocked_range<int>(0, m1.val.size()),
         m1.val[0],
         [&](const tbb::blocked_range<int>& r, T max_value) {
-            cerr << "hi" << m1.val.size() << endl;
             for (int i = r.begin(); i != r.end(); ++i)
             {
                 if (m1.val[i] > max_value)
