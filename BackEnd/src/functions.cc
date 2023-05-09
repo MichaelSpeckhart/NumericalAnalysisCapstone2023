@@ -394,8 +394,6 @@ vector<double> backward_substitution(vector<vector<double>> &m)
     return res;
 }
 
-This is the code for Gauss elimination
-
 // gaussian elimination with partial pivoting
 // returns true if successful, false if A is singular
 // Modifies both A and b to store the results
@@ -444,14 +442,14 @@ bool gaussian_elimination(std::vector<std::vector<double> > &A, std::vector<doub
 // A is an m x n matrix with m >= n
 // Q is an m x n orthogonal matrix
 // R is an n x n upper-triangular matrix
-void qr_factorization(vector<vector<double>> A, vector<vector<double>> &Q, vector<vector<double>> &R)
+pair<vector<vector<double>>, vector<vector<double>>> qr_factorization(vector<vector<double>> A)
 {
     const int m = A.size();
     const int n = A[0].size();
 
     // Initialize Q and R matrices with zeros
-    Q = vector<vector<double>>(m, vector<double>(n, 0.0));
-    R = vector<vector<double>>(n, vector<double>(n, 0.0));
+    vector<vector<double>> Q(m, vector<double>(n, 0.0));
+    vector<vector<double>> R(n, vector<double>(n, 0.0));
 
     // Calculate R matrix using Gram-Schmidt orthogonalization
     for (int j = 0; j < n; j++)
@@ -492,6 +490,7 @@ void qr_factorization(vector<vector<double>> A, vector<vector<double>> &Q, vecto
         }
         R[j][j] = norm;
     }
+    return make_pair(Q, R);
 }
 
 // Perform LU factorization on the input matrix A

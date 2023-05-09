@@ -54,7 +54,7 @@ T get_matrixCSC(CSCMatrix<T> m1, size_t row, size_t col)
 /// @param array  The dense matrix to convert
 /// @return The CSC matrix
 template <typename T>
-CSCMatrix<T> from_vector(vector<vector<T>> &array)
+CSCMatrix<T> from_vector_CSC(vector<vector<T>> &array)
 {
     CSCMatrix<T> returnMatrix;
     returnMatrix.numRows = array.size();
@@ -102,13 +102,11 @@ CSCMatrix<T> add_matrixCSC(CSCMatrix<T> m1, CSCMatrix<T> m2)
 {
     if (m1.numRows != m2.numRows)
     {
-        // throw error
-        cout << "Number of rows not equal: " << m1.numRows << " " << m2.numRows << endl;
+        throw std::invalid_argument("The number of rows in the first matrix must match the number of rows in the second matrix.");
     }
     if (m1.numColumns != m2.numColumns)
     {
-        // throw error
-        cout << "Number of columns not equal: " << m1.numColumns << " " << m2.numColumns << endl;
+        throw std::invalid_argument("The number of columns in the first matrix must match the number of columns in the second matrix.");
     }
     CSCMatrix<T> returnMatrix;
     returnMatrix.numRows = m1.numRows;
@@ -213,8 +211,7 @@ CSCMatrix<T> multiply_matrixCSC(CSCMatrix<T> m1, CSCMatrix<T> m2)
 {
     if (m1.numColumns != m2.numRows)
     {
-        // throw error
-        cout << "Number of columns of first matrix not equal to number of rows of second matrix: " << m1.numColumns << " " << m2.numRows << endl;
+        throw std::invalid_argument("The number of columns in the first matrix must match the number of rows in the second matrix.");
     }
     CSCMatrix<T> returnMatrix;
     returnMatrix.numRows = m1.numRows;
@@ -255,7 +252,7 @@ CSCMatrix<T> multiply_matrixCSC(CSCMatrix<T> m1, CSCMatrix<T> m2)
         }
         returnMatrix.col_ptr.push_back(returnMatrix.val.size());
     }
-    return returnMatrix;
+    return transpose_matrixCSC(returnMatrix);
 }
 
 /// @brief Subtract two compressed sparse column(CSC) matrices
@@ -268,13 +265,11 @@ CSCMatrix<T> subtract_matrixCSC(CSCMatrix<T> m1, CSCMatrix<T> m2)
 {
     if (m1.numRows != m2.numRows)
     {
-        // throw error
-        cout << "Number of rows not equal: " << m1.numRows << " " << m2.numRows << endl;
+        throw std::invalid_argument("The number of rows in the first matrix must match the number of rows in the second matrix.");
     }
     if (m1.numColumns != m2.numColumns)
     {
-        // throw error
-        cout << "Number of columns not equal: " << m1.numColumns << " " << m2.numColumns << endl;
+        throw std::invalid_argument("The number of columns in the first matrix must match the number of columns in the second matrix.");
     }
     CSCMatrix<T> returnMatrix;
     returnMatrix.numRows = m1.numRows;
@@ -389,48 +384,48 @@ T find_max_CSC(CSCMatrix<T> matrix)
     return max_value;
 }
 
-int main()
-{
-    vector<vector<int>> array = vector<vector<int>>(4, vector<int>(3));
-    array[0][0] = 1;
-    array[0][1] = 2;
-    array[0][2] = 3;
-    array[1][0] = 4;
-    array[1][1] = 5;
-    array[1][2] = 6;
-    array[2][0] = 7;
-    array[2][1] = 8;
-    array[2][2] = 9;
-    array[3][0] = 10;
-    array[3][1] = 11;
-    array[3][2] = 12;
+// int main()
+// {
+//     vector<vector<int>> array = vector<vector<int>>(4, vector<int>(3));
+//     array[0][0] = 1;
+//     array[0][1] = 2;
+//     array[0][2] = 3;
+//     array[1][0] = 4;
+//     array[1][1] = 5;
+//     array[1][2] = 6;
+//     array[2][0] = 7;
+//     array[2][1] = 8;
+//     array[2][2] = 9;
+//     array[3][0] = 10;
+//     array[3][1] = 11;
+//     array[3][2] = 12;
 
-    vector<vector<int>> array2 = vector<vector<int>>(4, vector<int>(3));
-    array2[0][0] = 9;
-    array2[0][1] = -4;
-    array2[0][2] = 7;
-    array2[1][0] = -6;
-    array2[1][1] = -5;
-    array2[1][2] = 4;
-    array2[2][0] = 3;
-    array2[2][1] = 2;
-    array2[2][2] = 1;
-    array2[3][0] = 10;
-    array2[3][1] = 11;
-    array2[3][2] = 12;
+//     vector<vector<int>> array2 = vector<vector<int>>(4, vector<int>(3));
+//     array2[0][0] = 9;
+//     array2[0][1] = -4;
+//     array2[0][2] = 7;
+//     array2[1][0] = -6;
+//     array2[1][1] = -5;
+//     array2[1][2] = 4;
+//     array2[2][0] = 3;
+//     array2[2][1] = 2;
+//     array2[2][2] = 1;
+//     array2[3][0] = 10;
+//     array2[3][1] = 11;
+//     array2[3][2] = 12;
 
-    CSCMatrix<int> m1 = from_vector(array);
-    CSCMatrix<int> m2 = from_vector(array2);
-    CSCMatrix<int> m3 = add_matrixCSC(m1, m2);
-    print_matrixCSC(m3);
-    m3 = transpose_matrixCSC(m3);
-    print_matrixCSC(m3);
-    // m3 = transpose_matrixCSC(m3);
-    m3 = multiply_matrixCSC(m2, transpose_matrixCSC(m1));
-    print_matrixCSC(m3);
-    cout << find_min_CSC(m3) << endl;
-    cout << find_max_CSC(m3) << endl;
-    print_matrixCSC(scalar_multiply_CSC(m3, 2));
+//     CSCMatrix<int> m1 = from_vector(array);
+//     CSCMatrix<int> m2 = from_vector(array2);
+//     CSCMatrix<int> m3 = add_matrixCSC(m1, m2);
+//     print_matrixCSC(m3);
+//     m3 = transpose_matrixCSC(m3);
+//     print_matrixCSC(m3);
+//     // m3 = transpose_matrixCSC(m3);
+//     m3 = multiply_matrixCSC(m2, transpose_matrixCSC(m1));
+//     print_matrixCSC(m3);
+//     cout << find_min_CSC(m3) << endl;
+//     cout << find_max_CSC(m3) << endl;
+//     print_matrixCSC(scalar_multiply_CSC(m3, 2));
 
-    return 0;
-}
+//     return 0;
+// }

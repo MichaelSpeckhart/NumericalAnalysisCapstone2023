@@ -58,7 +58,7 @@ T get_matrixCSR(CSRMatrix<T> m1, size_t row, size_t col)
 /// @param array The dense matrix to convert
 /// @return The CSR matrix
 template <typename T>
-CSRMatrix<T> from_vector(vector<vector<T>> &array)
+CSRMatrix<T> from_vector_CSR(vector<vector<T>> &array)
 {
     CSRMatrix<T> returnMatrix;
     returnMatrix.numRows = array.size();
