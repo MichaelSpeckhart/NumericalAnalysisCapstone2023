@@ -18,7 +18,7 @@
 #include <climits>
 #include <string>
 #include <vector>
-#include <omp.h>
+//#include <omp.h>
 #include <vector>
 #include <cmath>
 #include <stdexcept>
@@ -105,6 +105,18 @@ vector<vector<vector<double>>> read_file(char *filename)
         std::cerr << e.what() << '\n';
         return {{}};
     }
+}
+
+/// @brief Generates an identity matrix.
+/// @param size The size of the matrix.
+/// @return The identity matrix.
+vector<vector<double>> identity_matrix(size_t size)
+{
+    vector<vector<double>> matrix(size, vector<double>(size, 0));
+#pragma omp parallel
+    for (int i = 0; i < size; ++i)
+        matrix[i][i] = 1;
+    return matrix;
 }
 
 /// @brief Adds to matrices together.
@@ -493,15 +505,17 @@ pair<vector<vector<double>>, vector<vector<double>>> qr_factorization(vector<vec
     return make_pair(Q, R);
 }
 
-// Perform LU factorization on the input matrix A
+// Perform LU factorization with partial pivoting on the input matrix A
 // The factorization is stored in place in A as lower and upper triangular matrices
 // with the diagonal of L stored as ones
 // Return the permutation matrix as a vector of indices
-std::vector<int> lu_factorization(std::vector<std::vector<double>> &A)
+std::vector<int> lu_factorization_inplace(std::vector<std::vector<double>> &A)
 {
     const int n = A.size();
     std::vector<int> p(n);
-
+    if (n != A[0].size()) {
+         throw invalid_argument("Error: Matrix must be square nxn");
+     }
     // Initialize the permutation matrix to the identity matrix
     for (int i = 0; i < n; i++)
     {
@@ -548,6 +562,38 @@ std::vector<int> lu_factorization(std::vector<std::vector<double>> &A)
     return p;
 }
 
+tuple<vector<vector<double>>, vector<vector<double>>, vector<vector<double>>> lu_factorization(std::vector<std::vector<double>> &A) {
+
+    vector<vector<double>> L(A.size(), vector<double>(A.size(), 0.0));
+    vector<vector<double>> U(A.size(), vector<double>(A.size(), 0.0));
+    vector<vector<double>> P(A.size(), vector<double>(A.size(), 0.0));
+    for (int i=0; i < A.size(); i++) {
+        for (int j=0; j < A.size(); j++) {
+            L[i][j] = A[i][j];
+        }
+    }
+    vector<int> p = lu_factorization_inplace(L);
+    for (int i=0; i < A.size(); i++) {
+        for (int j=0; j < A.size(); j++) {
+            if (i == j) {
+                U[i][j] = L[i][j];
+                L[i][j] = 1;
+            }
+            else if (i < j) {
+                U[i][j] = L[i][j];
+                L[i][j] = 0;
+            }
+            else {
+                U[i][j] = 0;
+            }
+        }
+    }
+    for (int i=0; i < A.size(); i++) {
+        P[i][p[i]] = 1;
+    }
+    return make_tuple(P, L, U);
+}
+
 /*Cholesky factorization is used when the matrix is positive definite, which means that all eigenvalues are positive.
 In this case, we can factorize A as A = L L^T, where L is a lower triangular matrix with positive diagonal elements.
 To check if A is positive definite, we can check if all diagonal elements of the LDL^T factorization are positive.
@@ -557,13 +603,13 @@ This implementation assumes that A is a square matrix, */
 // The factorization is stored in place in A as lower triangular matrix L and
 // diagonal matrix D (stored as a vector)
 // Return true if successful, false if the matrix is not positive definite
-bool ldlt_factorization(std::vector<std::vector<double>> &A, std::vector<double> &D)
+pair<std::vector<std::vector<double>>, std::vector<double>> ldlt_factorization(std::vector<std::vector<double>> &A)
 {
     const int n = A.size();
 
     // Initialize D to the diagonal of A and L to the identity matrix
-    D.resize(n);
     std::vector<std::vector<double>> L(n, std::vector<double>(n, 0));
+    std::vector<double> D(n, 0);
     for (int i = 0; i < n; i++)
     {
         D[i] = A[i][i];
@@ -573,51 +619,24 @@ bool ldlt_factorization(std::vector<std::vector<double>> &A, std::vector<double>
     // Perform factorization
     for (int j = 0; j < n; j++)
     {
-        if (D[j] <= 0)
-        {
-            // Matrix is not positive definite
-            return false;
-        }
-
-        if (j == n - 1 && A[j][j] == D[j])
-        {
-            // Last diagonal element is positive, use Cholesky factorization
-            D[j] = sqrt(D[j]);
-            for (int i = 0; i < n; i++)
-            {
-                L[i][j] = A[i][j] / D[j];
-            }
-            return true;
-        }
-
         double sum = 0;
-        for (int k = j + 1; k < n; k++)
-        {
-            sum += L[j][k] * D[k] * L[j][k];
+        for (int i=0; i < j; i++) {
+            sum += L[j][i] * D[i] * L[j][i];
         }
-        double delta = D[j] - sum;
+        D[j] -= sum;
 
-        if (delta <= 0)
-        {
-            // Matrix is not positive definite
-            return false;
-        }
-
-        D[j] = delta;
         for (int i = j + 1; i < n; i++)
         {
             sum = 0;
-            for (int k = j + 1; k < n; k++)
+            for (int k = 0; k < j; k++)
             {
                 sum += L[i][k] * D[k] * L[j][k];
             }
-            double gamma = sum / delta;
-            L[i][j] = A[i][j] / D[j] - gamma;
+            L[i][j] = (A[i][j] - sum) / D[j];
         }
     }
 
-    // Matrix is positive definite
-    return true;
+    return make_pair(L, D);
 }
 
 // Solves Ax = b using Gauss-Seidel method
@@ -701,11 +720,11 @@ std::vector<double> jacobi_iteration(const std::vector<std::vector<double>> &A,
         }
 
         // Compute residual and check for convergence
-        diff = 0.0;
-        for (int i = 0; i < n; i++)
-        {
-            diff += std::abs(x_new[i] - x[i]);
-        }
+        // diff = 0.0;
+        // for (int i = 0; i < n; i++)
+        // {
+        //     diff += std::abs(x_new[i] - x[i]);
+        // }
         x = x_new;
         iter++;
     }

@@ -1,6 +1,6 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
-#include "../functionsCSRParallel.cc"
+// #include "../functionsCSRParallel.cc"
 #include "../functions.cc"
 #include "../functionsCSR.cc"
 #include "../functionsCSC.cc"
@@ -24,6 +24,29 @@ void CHECKCSR(CSRMatrix<int> mResult, vector<vector<int>> mCheck)
         {
             CHECK_MESSAGE(get_matrixCSR(mResult, i, j) == mCheck[i][j], "i = " << i << ", j = " << j);
         }
+    }
+}
+
+void CHECK_MATRIX_EQ(vector<vector<double>> &mResult, vector<vector<double>> &mCheck, double tol)
+{
+    CHECK(mResult.size() == mCheck.size());
+    for (size_t i = 0; i < mResult.size(); i++)
+    {
+        CHECK(mResult[i].size() == mCheck[i].size());
+        for (size_t j = 0; j < mResult[i].size(); j++)
+        {
+            // CHECK_MESSAGE(mResult[i][j] == mCheck[i][j], "i = " << i << ", j = " << j);
+            CHECK_MESSAGE(abs(mResult[i][j] - mCheck[i][j]) < tol, "i = " << i << ", j = " << j);
+        }
+    }
+}
+
+void CHECK_VECTOR_EQ(vector<double> &mResult, vector<double> &mCheck, double tol)
+{
+    CHECK(mResult.size() == mCheck.size());
+    for (size_t i = 0; i < mResult.size(); i++)
+    {
+        CHECK_MESSAGE(abs(mResult[i] - mCheck[i]) < tol, "i = " << i);
     }
 }
 
@@ -340,33 +363,33 @@ TEST_CASE("testing CSC scalar multiplication")
 }
 
 // test for Gaussian Elimination
-TEST_CASE("testing CSC Gaussian Elimination 1")
+TEST_CASE("testing Gaussian Elimination 1")
 {
     std::vector<std::vector<double>> A1 = {{2, 1, -1},
                                            {-3, -1, 2},
                                            {-2, 1, 2}};
     std::vector<double> b1 = {8, -11, -3};
+    std::vector<double> x1 = {2, 3, -1};
+
     bool result1 = gaussian_elimination(A1, b1);
     CHECK(result1);
-    CHECK(doctest::Approx(b1[0]).epsilon(0.01) == 2);
-    CHECK(doctest::Approx(b1[1]).epsilon(0.01) == 3);
-    CHECK(doctest::Approx(b1[2]).epsilon(0.01) == -1);
+    CHECK_VECTOR_EQ(b1, x1, 1e-6);
 }
 
-TEST_CASE("testing CSC Gaussian Elimination 2")
+TEST_CASE("testing Gaussian Elimination 2")
 {
     std::vector<std::vector<double>> A2 = {{1, 2, -1},
                                            {2, 1, -2},
                                            {-3, 1, 1}};
     std::vector<double> b2 = {3, 3, -6};
+    std::vector<double> x2 = {3, 1, 2};
+
     bool result2 = gaussian_elimination(A2, b2);
     CHECK(result2);
-    CHECK(doctest::Approx(b2[0]).epsilon(0.01) == 3);
-    CHECK(doctest::Approx(b2[1]).epsilon(0.01) == 1);
-    CHECK(doctest::Approx(b2[2]).epsilon(0.01) == 2);
+    CHECK_VECTOR_EQ(b2, x2, 1e-6);
 }
 
-TEST_CASE("testing CSC Gaussian Elimination 3")
+TEST_CASE("testing Gaussian Elimination 3")
 {
     std::vector<std::vector<double>> A3 = {{1, 2},
                                            {2, 4}};
@@ -386,35 +409,24 @@ TEST_CASE("QR Factorization Test 1")
 
     // Call the QR factorization function
     auto qr = qr_factorization(A);
-    auto q = qr.first;
-    auto r = qr.second;
+    auto Q = qr.first;
+    auto R = qr.second;
 
     // Check that the dimensions of the Q and R matrices are correct
-    CHECK(q.size() == A.size());
-    CHECK(q[0].size() == A[0].size());
-    CHECK(r.size() == A[0].size());
-    CHECK(r[0].size() == A[0].size());
+    CHECK(Q.size() == A.size());
+    CHECK(Q[0].size() == A[0].size());
+    CHECK(R.size() == A[0].size());
+    CHECK(R[0].size() == A[0].size());
 
     // Check that Q is orthogonal
-    std::vector<std::vector<double>> Q_transpose = transpose(q);
-    std::vector<std::vector<double>> identity = mult_matrix(Q_transpose, q);
-    for (size_t i = 0; i < identity.size(); i++)
-    {
-        for (size_t j = 0; j < identity[0].size(); j++)
-        {
-            if (i == j)
-            {
-                CHECK(doctest::Approx(identity[i][j]).epsilon(1e-6) == 1);
-            }
-            else
-            {
-                CHECK(doctest::Approx(identity[i][j]).epsilon(1e-6) == 0);
-            }
-        }
-    }
+    std::vector<std::vector<double>> QT = transpose(Q);
+    std::vector<std::vector<double>> Q_QT = mult_matrix(QT, Q);
+    std::vector<std::vector<double>> I = identity_matrix(A[0].size());
+    
+    CHECK_MATRIX_EQ(Q_QT, I, 1e-6);
 
     // Check that Q*R = A
-    std::vector<std::vector<double>> Q_times_R = mult_matrix(q, r);
+    std::vector<std::vector<double>> Q_times_R = mult_matrix(Q, R);
     for (size_t i = 0; i < A.size(); i++)
     {
         for (size_t j = 0; j < A[0].size(); j++)
@@ -429,136 +441,88 @@ TEST_CASE("LU Factorization test 1")
 {
     // Test a 2x2 matrix
     std::vector<std::vector<double>> A = {{4, 3}, {6, 3}};
-    std::vector<std::vector<double>> A1 = {{4, 3}, {6, 3}};
 
-    std::vector<int> p1 = lu_factorization(A1);
-    std::vector<std::vector<double>> P(A1.size(), std::vector<double>(A1.size(), 0));
-    std::vector<std::vector<double>> L(A1.size(), std::vector<double>(A1.size(), 0));
-    std::vector<std::vector<double>> U(A1.size(), std::vector<double>(A1[0].size(), 0));
+    auto result = lu_factorization(A);
+    std::vector<std::vector<double>> P = std::get<0>(result);
+    std::vector<std::vector<double>> L = std::get<1>(result);
+    std::vector<std::vector<double>> U = std::get<2>(result);
 
-    // Fill in the P, L, and U matrices
-    for (size_t i = 0; i < A1.size(); i++)
-    {
-        P[i][p1[i]] = 1;
-        for (size_t j = 0; j < A1[0].size(); j++)
-        {
-            if (i <= j) {
-                U[i][j] = A1[i][j];
-                if (i == j) {
-                    L[i][j] = 1;
-                }
-            } else {
-                L[i][j] = A1[i][j];
-            }
-        }
-    }
     // Check that L*U = P*A
-    std::vector<std::vector<double>> L_times_U = mult_matrix(L, U);
-    std::vector<std::vector<double>> P_times_A = mult_matrix(P, A);
-
-    for (size_t i = 0; i < P_times_A.size(); i++)
-    {
-        for (size_t j = 0; j < P_times_A[0].size(); j++)
-        {
-            CHECK(doctest::Approx(L_times_U[i][j]).epsilon(1e-6) == P_times_A[i][j]);
-        }
-    }
-
+    std::vector<std::vector<double>> L_U = mult_matrix(L, U);
+    std::vector<std::vector<double>> P_A = mult_matrix(P, A);
+    CHECK_MATRIX_EQ(L_U, P_A, 1e-6);
 }
 
 TEST_CASE("LU Factorization test 2")
 {
     std::vector<std::vector<double>> A = {{1, 2, -1, 4}, {-2, -3, 4, 5}, {3, 6, -2, 7}, {1, 3, 1, 9}};
-    std::vector<std::vector<double>> A1 = {{1, 2, -1, 4}, {-2, -3, 4, 5}, {3, 6, -2, 7}, {1, 3, 1, 9}};
     
-    std::vector<int> p1 = lu_factorization(A1);
-    std::vector<std::vector<double>> P(A1.size(), std::vector<double>(A1.size(), 0));
-    std::vector<std::vector<double>> L(A1.size(), std::vector<double>(A1.size(), 0));
-    std::vector<std::vector<double>> U(A1.size(), std::vector<double>(A1[0].size(), 0));
+    auto result = lu_factorization(A);
+    std::vector<std::vector<double>> P = std::get<0>(result);
+    std::vector<std::vector<double>> L = std::get<1>(result);
+    std::vector<std::vector<double>> U = std::get<2>(result);
 
-    // Fill in the P, L, and U matrices
-    for (size_t i = 0; i < A1.size(); i++)
-    {
-        P[i][p1[i]] = 1;
-        for (size_t j = 0; j < A1[0].size(); j++)
-        {
-            if (i <= j) {
-                U[i][j] = A1[i][j];
-                if (i == j) {
-                    L[i][j] = 1;
-                }
-            } else {
-                L[i][j] = A1[i][j];
-            }
-        }
-    }
     // Check that L*U = P*A
-    std::vector<std::vector<double>> L_times_U = mult_matrix(L, U);
-    std::vector<std::vector<double>> P_times_A = mult_matrix(P, A);
-
-    for (size_t i = 0; i < P_times_A.size(); i++)
-    {
-        for (size_t j = 0; j < P_times_A[0].size(); j++)
-        {
-            CHECK(doctest::Approx(L_times_U[i][j]).epsilon(1e-6) == P_times_A[i][j]);
-        }
-    }
+    std::vector<std::vector<double>> L_U = mult_matrix(L, U);
+    std::vector<std::vector<double>> P_A = mult_matrix(P, A);
+    CHECK_MATRIX_EQ(L_U, P_A, 1e-6);
 }
 
-// // test for LDL factorization
-// TEST_CASE("LDL^T Factorization")
-// {
-//     std::vector<std::vector<double>> A = {{4, 12, -16}, {12, 37, -43}, {-16, -43, 98}};
-//     std::vector<double> d;
-//     bool success = ldlt_factorization(A, d);
 
-//     REQUIRE(success == true);
+// test for LDL factorization
+TEST_CASE("LDL^T Factorization")
+{
+    std::vector<std::vector<double>> A = {{4, 12, -16}, {12, 37, -43}, {-16, -43, 98}};
+    auto result = ldlt_factorization(A);
+    std::vector<std::vector<double>> L = result.first;
+    std::vector<double> d = result.second;
+    std::vector<std::vector<double>> D(A.size(), std::vector<double>(A.size(), 0));
+    for (size_t i = 0; i < A.size(); i++)
+    {
+        D[i][i] = d[i];
+    }
 
-//     // Check that LDL^T = A
-//     const int n = A.size();
-//     for (int i = 0; i < n; i++)
-//     {
-//         for (int j = 0; j < n; j++)
-//         {
-//             double sum = 0.0;
-//             for (int k = 0; k < n; k++)
-//             {
-//                 sum += A[i][k] * d[k] * A[j][k];
-//             }
-//             REQUIRE(std::abs(sum - A[i][j]) < 1e-10);
-//         }
-//     }
-// }
+    // Check L is correct
+    std::vector<std::vector<double>> L_correct = {{1, 0, 0}, {3, 1, 0}, {-4, 5, 1}};
+    CHECK_MATRIX_EQ(L, L_correct, 1e-6);
 
-// TEST_CASE("Gauss-Seidel")
-// {
-//     std::vector<std::vector<double>> A = {{4, 1, -1},
-//                                           {2, 5, 2},
-//                                           {1, 2, 4}};
-//     std::vector<double> b = {4, 7, 14};
-//     std::vector<double> x = {0, 0, 0};
+    // Check D is correct
+    std::vector<double> d_correct = {{4, 1, 9}};
+    CHECK_VECTOR_EQ(d, d_correct, 1e-6);
 
-//     int max_iter = 100;
-//     bool success = gauss_seidel(A, b, x, max_iter);
+    // Check that LDL^T = A
+    std::vector<std::vector<double>> LD = mult_matrix(L, D);
+    std::vector<std::vector<double>> LT = transpose(L);
+    std::vector<std::vector<double>> LDLT = mult_matrix(LD, LT);
+    CHECK_MATRIX_EQ(LDLT, A, 1e-6);
+}
 
-//     REQUIRE(success);
-//     REQUIRE(std::abs(x[0] - 1) < 1e-6);
-//     REQUIRE(std::abs(x[1] - 1) < 1e-6);
-//     REQUIRE(std::abs(x[2] - 3) < 1e-6);
-// }
+TEST_CASE("Gauss-Seidel")
+{
+    std::vector<std::vector<double>> A = {{16, 3},
+                                          {7, -11}};
+    std::vector<double> b = {19, -4};
+    std::vector<double> x = {0, 0};
 
-// TEST_CASE("Jacobi Iteration")
-// {
-//     const std::vector<std::vector<double>> A = {{4.0, 1.0, 1.0}, {1.0, 4.0, 1.0}, {1.0, 1.0, 4.0}};
-//     const std::vector<double> b = {6.0, 6.0, 6.0};
-//     const double tol = 1e-6;
-//     const int max_iter = 100;
+    const double tol = 1e-6;
+    int max_iter = 100;
 
-//     const std::vector<double> x_expected = {1.0, 1.0, 1.0};
-//     const std::vector<double> x = jacobi_iteration(A, b, tol, max_iter);
+    std::vector<double> x_expected = {1.0, 1.0};
+    bool success = gauss_seidel(A, b, x, max_iter);
 
-//     for (int i = 0; i < x.size(); i++)
-//     {
-//         REQUIRE(std::abs(x[i] - x_expected[i]) < tol);
-//     }
-// }
+    CHECK(success);
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+}
+
+TEST_CASE("Jacobi Iteration")
+{
+    const std::vector<std::vector<double>> A = {{4.0, 1.0, 1.0}, {1.0, 4.0, 1.0}, {1.0, 1.0, 4.0}};
+    const std::vector<double> b = {6.0, 6.0, 6.0};
+    const double tol = 1e-6;
+    const int max_iter = 100;
+
+    std::vector<double> x_expected = {1.0, 1.0, 1.0};
+    std::vector<double> x = jacobi_iteration(A, b, tol, max_iter);
+
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+}
