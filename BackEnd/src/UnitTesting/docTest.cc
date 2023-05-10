@@ -526,3 +526,21 @@ TEST_CASE("Jacobi Iteration")
 
     CHECK_VECTOR_EQ(x, x_expected, tol);
 }
+
+
+TEST_CASE("Incomplete Cholesky Factorization") {
+    // Create a matrix A
+    vector<vector<double>> A = {{4.0, -1.0, 2.0},
+                                {-1.0, 6.0, -4.0},
+                                {2.0, -4.0, 8.0}};
+
+    // Compute the incomplete Cholesky factorization of A
+    vector<vector<double>> L = incompleteCholesky(A, 1e-12);
+
+    auto LLt = mult_matrix(L, transpose(L));
+    vector<vector<double>> LLt_expected = {{4.0, -1.0, 2.0},
+                                           {-1.0, 6.0, -4.5},
+                                           {2.0, -4.5, 8.0}};
+
+    CHECK_MATRIX_EQ(LLt, LLt_expected, 1e-12);
+}

@@ -718,16 +718,37 @@ std::vector<double> jacobi_iteration(const std::vector<std::vector<double>> &A,
             }
             x_new[i] = (b[i] - sum) / A[i][i];
         }
-
-        // Compute residual and check for convergence
-        // diff = 0.0;
-        // for (int i = 0; i < n; i++)
-        // {
-        //     diff += std::abs(x_new[i] - x[i]);
-        // }
         x = x_new;
         iter++;
     }
 
     return x;
 }
+
+using std::vector;
+
+// Incomplete Cholesky factorization
+vector<vector<double>> incompleteCholesky(const vector<vector<double>>& A, double tol) {
+    int n = A.size();
+    vector<vector<double>> L(n, vector<double>(n));
+
+    // Compute the lower triangle of A
+    for (int j = 0; j < n; ++j) {
+        double d = A[j][j];
+        for (int k = 0; k < j; ++k) {
+            double s = 0.0;
+            for (int i = k; i < j; ++i) {
+                s += L[j][i] * L[k][i];
+            }
+            L[j][k] = (A[j][k] - s) / L[k][k];
+            d -= L[j][k] * L[j][k];
+        }
+        L[j][j] = std::sqrt(std::max(d, 0.0));
+    }
+
+    return L;
+}
+
+
+
+
