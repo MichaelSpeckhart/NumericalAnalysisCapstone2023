@@ -562,8 +562,9 @@ std::vector<int> lu_factorization_inplace(std::vector<std::vector<double>> &A)
     return p;
 }
 
-tuple<vector<vector<double>>, vector<vector<double>>, vector<vector<double>>> lu_factorization(std::vector<std::vector<double>> &A) {
 
+tuple<vector<vector<double>>, vector<vector<double>>, vector<vector<double>>> lu_factorization(std::vector<std::vector<double>> &A) 
+{
     vector<vector<double>> L(A.size(), vector<double>(A.size(), 0.0));
     vector<vector<double>> U(A.size(), vector<double>(A.size(), 0.0));
     vector<vector<double>> P(A.size(), vector<double>(A.size(), 0.0));
@@ -594,15 +595,40 @@ tuple<vector<vector<double>>, vector<vector<double>>, vector<vector<double>>> lu
     return make_tuple(P, L, U);
 }
 
-/*Cholesky factorization is used when the matrix is positive definite, which means that all eigenvalues are positive.
-In this case, we can factorize A as A = L L^T, where L is a lower triangular matrix with positive diagonal elements.
-To check if A is positive definite, we can check if all diagonal elements of the LDL^T factorization are positive.
-This implementation assumes that A is a square matrix, */
+// Perfome Cholesky factorization on the input matrix A
+// Return the lower triangular matrix L
+
+vector<vector<double>> cholesky_factorization(std::vector<std::vector<double>> &A)
+{
+    const int n = A.size();
+    vector<vector<double>> L(n, vector<double>(n, 0.0));
+    if (n != A[0].size()) {
+         throw invalid_argument("Error: Matrix must be square nxn");
+    }
+    // Perform Cholesky factorization
+    for (int j = 0; j < n; j++) {
+        double sum = 0.0;
+        for (int k = 0; k < j; k++) {
+            sum += L[j][k] * L[j][k];
+        }
+        double d = A[j][j] - sum;
+        if (d < 0.0) {
+            throw invalid_argument("Error: Matrix is not positive definite");
+        }
+        L[j][j] = sqrt(d);
+        for (int i = j+1; i < n; i++) {
+            double sum = 0.0;
+            for (int k = 0; k < j; k++) {
+                sum += L[i][k] * L[j][k];
+            }
+            L[i][j] = (A[i][j] - sum) / L[j][j];
+        }
+    }
+    return L;
+}
+
+
 // Perform LDL^T factorization on the input matrix A
-// If the matrix is positive definite, use Cholesky factorization instead
-// The factorization is stored in place in A as lower triangular matrix L and
-// diagonal matrix D (stored as a vector)
-// Return true if successful, false if the matrix is not positive definite
 pair<std::vector<std::vector<double>>, std::vector<double>> ldlt_factorization(std::vector<std::vector<double>> &A)
 {
     const int n = A.size();
@@ -733,22 +759,27 @@ vector<vector<double>> incompleteCholesky(const vector<vector<double>>& A, doubl
     vector<vector<double>> L(n, vector<double>(n));
 
     // Compute the lower triangle of A
-    for (int j = 0; j < n; ++j) {
-        double d = A[j][j];
-        for (int k = 0; k < j; ++k) {
-            double s = 0.0;
-            for (int i = k; i < j; ++i) {
-                s += L[j][i] * L[k][i];
-            }
-            L[j][k] = (A[j][k] - s) / L[k][k];
-            d -= L[j][k] * L[j][k];
+    for (int i = 0; i < n; ++i) {
+        // cout << "A[i][i]: " << A[i][i] << endl;
+        double d = A[i][i];
+        for (int k = 0; k < i; ++k) {
+            // cout << "i, k, d: " << i << ", " << k << ", " << d << endl;
+            d -= L[i][k] * L[i][k];
         }
-        L[j][j] = std::sqrt(std::max(d, 0.0));
+        //cout << "d: " << d << endl;
+        L[i][i] = std::sqrt(std::max(d, 0.0));
+        for (int j = i + 1; j < n; ++j) {
+            double s = 0.0;
+            for (int k = 0; k < i; ++k) {
+                s += L[i][k] * L[j][k];
+                // cout << "j, k, i, s: " << j << ", " << k << ", " << i << ", " << s << endl;
+            }
+            L[j][i] = (A[j][i] - s) / L[i][i];
+            // d -= L[j][k] * L[j][k];
+        }
     }
 
     return L;
 }
-
-
 
 

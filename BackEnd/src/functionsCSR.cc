@@ -366,6 +366,7 @@ CSRMatrix<T> scalar_multiply_CSR(CSRMatrix<T> m, T scalar)
 /// @tparam T The type of the matrix
 /// @param m The CSR matrix to find the min value of
 /// @return The min value in the matrix
+
 template <typename T>
 T find_min_CSR(CSRMatrix<T> matrix)
 {
@@ -398,6 +399,7 @@ T find_max_CSR(CSRMatrix<T> matrix)
     }
     return max_value;
 }
+
 
 /// @brief Creates CSR matrix for .mtx file
 /// @tparam T the type of matrix
