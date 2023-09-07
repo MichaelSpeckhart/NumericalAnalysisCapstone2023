@@ -18,7 +18,7 @@
 #include <climits>
 #include <string>
 #include <vector>
-//#include <omp.h>
+// #include <omp.h>
 #include <vector>
 #include <cmath>
 #include <stdexcept>
@@ -409,7 +409,7 @@ vector<double> backward_substitution(vector<vector<double>> &m)
 // gaussian elimination with partial pivoting
 // returns true if successful, false if A is singular
 // Modifies both A and b to store the results
-bool gaussian_elimination(std::vector<std::vector<double> > &A, std::vector<double> &b)
+bool gaussian_elimination(std::vector<std::vector<double>> &A, std::vector<double> &b)
 {
     const size_t n = A.size();
 
@@ -513,9 +513,10 @@ std::vector<int> lu_factorization_inplace(std::vector<std::vector<double>> &A)
 {
     const int n = A.size();
     std::vector<int> p(n);
-    if (n != A[0].size()) {
-         throw invalid_argument("Error: Matrix must be square nxn");
-     }
+    if (n != A[0].size())
+    {
+        throw invalid_argument("Error: Matrix must be square nxn");
+    }
     // Initialize the permutation matrix to the identity matrix
     for (int i = 0; i < n; i++)
     {
@@ -562,34 +563,41 @@ std::vector<int> lu_factorization_inplace(std::vector<std::vector<double>> &A)
     return p;
 }
 
-
-tuple<vector<vector<double>>, vector<vector<double>>, vector<vector<double>>> lu_factorization(std::vector<std::vector<double>> &A) 
+tuple<vector<vector<double>>, vector<vector<double>>, vector<vector<double>>> lu_factorization(std::vector<std::vector<double>> &A)
 {
     vector<vector<double>> L(A.size(), vector<double>(A.size(), 0.0));
     vector<vector<double>> U(A.size(), vector<double>(A.size(), 0.0));
     vector<vector<double>> P(A.size(), vector<double>(A.size(), 0.0));
-    for (int i=0; i < A.size(); i++) {
-        for (int j=0; j < A.size(); j++) {
+    for (int i = 0; i < A.size(); i++)
+    {
+        for (int j = 0; j < A.size(); j++)
+        {
             L[i][j] = A[i][j];
         }
     }
     vector<int> p = lu_factorization_inplace(L);
-    for (int i=0; i < A.size(); i++) {
-        for (int j=0; j < A.size(); j++) {
-            if (i == j) {
+    for (int i = 0; i < A.size(); i++)
+    {
+        for (int j = 0; j < A.size(); j++)
+        {
+            if (i == j)
+            {
                 U[i][j] = L[i][j];
                 L[i][j] = 1;
             }
-            else if (i < j) {
+            else if (i < j)
+            {
                 U[i][j] = L[i][j];
                 L[i][j] = 0;
             }
-            else {
+            else
+            {
                 U[i][j] = 0;
             }
         }
     }
-    for (int i=0; i < A.size(); i++) {
+    for (int i = 0; i < A.size(); i++)
+    {
         P[i][p[i]] = 1;
     }
     return make_tuple(P, L, U);
@@ -602,23 +610,29 @@ vector<vector<double>> cholesky_factorization(std::vector<std::vector<double>> &
 {
     const int n = A.size();
     vector<vector<double>> L(n, vector<double>(n, 0.0));
-    if (n != A[0].size()) {
-         throw invalid_argument("Error: Matrix must be square nxn");
+    if (n != A[0].size())
+    {
+        throw invalid_argument("Error: Matrix must be square nxn");
     }
     // Perform Cholesky factorization
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < n; j++)
+    {
         double sum = 0.0;
-        for (int k = 0; k < j; k++) {
+        for (int k = 0; k < j; k++)
+        {
             sum += L[j][k] * L[j][k];
         }
         double d = A[j][j] - sum;
-        if (d < 0.0) {
+        if (d < 0.0)
+        {
             throw invalid_argument("Error: Matrix is not positive definite");
         }
         L[j][j] = sqrt(d);
-        for (int i = j+1; i < n; i++) {
+        for (int i = j + 1; i < n; i++)
+        {
             double sum = 0.0;
-            for (int k = 0; k < j; k++) {
+            for (int k = 0; k < j; k++)
+            {
                 sum += L[i][k] * L[j][k];
             }
             L[i][j] = (A[i][j] - sum) / L[j][j];
@@ -626,7 +640,6 @@ vector<vector<double>> cholesky_factorization(std::vector<std::vector<double>> &
     }
     return L;
 }
-
 
 // Perform LDL^T factorization on the input matrix A
 pair<std::vector<std::vector<double>>, std::vector<double>> ldlt_factorization(std::vector<std::vector<double>> &A)
@@ -646,7 +659,8 @@ pair<std::vector<std::vector<double>>, std::vector<double>> ldlt_factorization(s
     for (int j = 0; j < n; j++)
     {
         double sum = 0;
-        for (int i=0; i < j; i++) {
+        for (int i = 0; i < j; i++)
+        {
             sum += L[j][i] * D[i] * L[j][i];
         }
         D[j] -= sum;
@@ -751,26 +765,97 @@ std::vector<double> jacobi_iteration(const std::vector<std::vector<double>> &A,
     return x;
 }
 
-using std::vector;
+// Solve the linear system Ax = b using SSOR iteration with relaxation parameter omega
+// A is a square matrix of size n x n
+// b is a vector of length n
+// tol is the tolerance for convergence
+// max_iter is the maximum number of iterations to perform
+// omega is the relaxation parameter (0 < omega < 2)
+// Return the solution x as a vector of length n
+std::vector<double> ssor_iteration(const std::vector<std::vector<double>> &A,
+                                   const std::vector<double> &b,
+                                   const double tol,
+                                   const int max_iter,
+                                   const double omega)
+{
+    const int n = A.size();
+    std::vector<double> x(n, 0.0);
+    std::vector<double> x_new(n, 0.0);
+
+    int iter = 0;
+    double diff = tol + 1.0;
+
+    while (iter < max_iter && diff > tol)
+    {
+        // Forward Sweep (Red-Black Ordering)
+        for (int i = 0; i < n; i++)
+        {
+            double sum = 0.0;
+            for (int j = 0; j < n; j++)
+            {
+                if (j != i)
+                {
+                    sum += A[i][j] * x_new[j];
+                }
+            }
+            x_new[i] = (1.0 - omega) * x[i] + (omega / A[i][i]) * (b[i] - sum);
+        }
+
+        // Backward Sweep (Black-Red Ordering)
+        for (int i = n - 1; i >= 0; i--)
+        {
+            double sum = 0.0;
+            for (int j = 0; j < n; j++)
+            {
+                if (j != i)
+                {
+                    sum += A[i][j] * x_new[j];
+                }
+            }
+            x_new[i] = (1.0 - omega) * x[i] + (omega / A[i][i]) * (b[i] - sum);
+        }
+
+        // Calculate the norm of the difference between x and x_new
+        diff = 0.0;
+        for (int i = 0; i < n; i++)
+        {
+            double abs_diff = std::abs(x_new[i] - x[i]);
+            if (abs_diff > diff)
+            {
+                diff = abs_diff;
+            }
+        }
+
+        x = x_new;
+        iter++;
+    }
+
+    return x;
+}
 
 // Incomplete Cholesky factorization
-vector<vector<double>> incompleteCholesky(const vector<vector<double>>& A, double tol) {
+std::vector<vector<double>> incompleteCholesky(const vector<vector<double>> &A, double tol)
+{
     int n = A.size();
     vector<vector<double>> L(n, vector<double>(n));
 
     // Compute the lower triangle of A
-    for (int i = 0; i < n; ++i) {
+    for (int i = 0; i < n; ++i)
+    {
         // cout << "A[i][i]: " << A[i][i] << endl;
         double d = A[i][i];
-        for (int k = 0; k < i; ++k) {
+        for (int k = 0; k < i; ++k)
+        {
             // cout << "i, k, d: " << i << ", " << k << ", " << d << endl;
             d -= L[i][k] * L[i][k];
         }
-        //cout << "d: " << d << endl;
+        // cout << "d: " << d << endl;
         L[i][i] = std::sqrt(std::max(d, 0.0));
-        for (int j = i + 1; j < n; ++j) {
+        for (int j = i + 1; j < n; ++j)
+        {
             double s = 0.0;
-            for (int k = 0; k < i; ++k) {
+            for (int k = 0; k < i; ++k)
+            {
                 s += L[i][k] * L[j][k];
                 // cout << "j, k, i, s: " << j << ", " << k << ", " << i << ", " << s << endl;
             }
@@ -781,5 +866,3 @@ vector<vector<double>> incompleteCholesky(const vector<vector<double>>& A, doubl
 
     return L;
 }
-
-

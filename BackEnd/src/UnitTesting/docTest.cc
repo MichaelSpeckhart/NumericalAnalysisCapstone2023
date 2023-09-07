@@ -5,6 +5,8 @@
 #include "../functionsCSR.cc"
 #include "../functionsCSC.cc"
 #include "fstream"
+const int numWidth = 10;
+const char separator = ' ';
 // Basic Unit tests for CSR add, multiply, and transpose
 // Use -d to time the tests
 
@@ -35,7 +37,6 @@ void CHECK_MATRIX_EQ(vector<vector<double>> &mResult, vector<vector<double>> &mC
         CHECK(mResult[i].size() == mCheck[i].size());
         for (size_t j = 0; j < mResult[i].size(); j++)
         {
-            // CHECK_MESSAGE(mResult[i][j] == mCheck[i][j], "i = " << i << ", j = " << j);
             CHECK_MESSAGE(abs(mResult[i][j] - mCheck[i][j]) < tol, "i = " << i << ", j = " << j);
         }
     }
@@ -50,6 +51,20 @@ void CHECK_VECTOR_EQ(vector<double> &mResult, vector<double> &mCheck, double tol
     }
 }
 
+template<typename T> void printElement(T t, const int& width)
+{
+    cout << left << setw(width) << setfill(separator) << t;
+}
+
+void PRINT_MATRIX(vector<vector<double>> &mResult)
+{
+    for (size_t i = 0; i < mResult.size(); i++) {
+        for (size_t j = 0; j < mResult[0].size(); j++) {
+            printElement(mResult[i][j], numWidth);  
+        }
+        cout << endl;
+    }
+}
 TEST_CASE("testing CSR Add")
 {
     vector<vector<int>> array = {{1, 0, 0}, {4, 5, 6}, {0, 8, 9}};
@@ -455,7 +470,8 @@ TEST_CASE("LU Factorization test 1")
 
 TEST_CASE("LU Factorization test 2")
 {
-    std::vector<std::vector<double>> A = {{1, 2, -1, 4}, {-2, -3, 4, 5}, {3, 6, -2, 7}, {1, 3, 1, 9}};
+    std::vector<std::vector<double>> A = {{1, 2, -1, 4}, {-2, -3, 4, 5}, 
+                                          {3, 6, -2, 7}, {1, 3, 1, 9}};
     
     auto result = lu_factorization(A);
     std::vector<std::vector<double>> P = std::get<0>(result);
@@ -477,10 +493,7 @@ TEST_CASE("LDL^T Factorization")
     std::vector<std::vector<double>> L = result.first;
     std::vector<double> d = result.second;
     std::vector<std::vector<double>> D(A.size(), std::vector<double>(A.size(), 0));
-    for (size_t i = 0; i < A.size(); i++)
-    {
-        D[i][i] = d[i];
-    }
+    for (size_t i = 0; i < A.size(); i++) {D[i][i] = d[i];}
 
     // Check L is correct
     std::vector<std::vector<double>> L_correct = {{1, 0, 0}, {3, 1, 0}, {-4, 5, 1}};
@@ -495,6 +508,33 @@ TEST_CASE("LDL^T Factorization")
     std::vector<std::vector<double>> LT = transpose(L);
     std::vector<std::vector<double>> LDLT = mult_matrix(LD, LT);
     CHECK_MATRIX_EQ(LDLT, A, 1e-6);
+}
+
+// test for Cholesky factorization
+TEST_CASE("Cholesky Factorization 0")
+{
+    std::vector<std::vector<double>> A = {{2, -1, 0},
+                                          {-1, 2, -1},
+                                          {0, -1, 2}};
+    std::vector<std::vector<double>> L = cholesky_factorization(A);
+    //PRINT_MATRIX(L);
+
+    // Check that L*L^T = A
+    std::vector<std::vector<double>> LT = transpose(L);
+    std::vector<std::vector<double>> LLT = mult_matrix(L, LT);
+    CHECK_MATRIX_EQ(LLT, A, 1e-6);
+}
+
+
+TEST_CASE("Cholesky Factorization 1")
+{
+    std::vector<std::vector<double>> A = {{4, 12, -16}, {12, 37, -43}, {-16, -43, 98}};
+    std::vector<std::vector<double>> L = cholesky_factorization(A);
+
+    // Check that L*L^T = A
+    std::vector<std::vector<double>> LT = transpose(L);
+    std::vector<std::vector<double>> LLT = mult_matrix(L, LT);
+    CHECK_MATRIX_EQ(LLT, A, 1e-6);
 }
 
 TEST_CASE("Gauss-Seidel")
@@ -527,20 +567,94 @@ TEST_CASE("Jacobi Iteration")
     CHECK_VECTOR_EQ(x, x_expected, tol);
 }
 
+TEST_CASE("SSOR Iteration (w = 1.0)")
+{
+    const std::vector<std::vector<double>> A = {{4.0, 1.0, 1.0}, {1.0, 4.0, 1.0}, {1.0, 1.0, 4.0}};
+    const std::vector<double> b = {6.0, 6.0, 6.0};
+    const double tol = 1e-6;
+    const int max_iter = 100;
+    const double omega = 1.0;  // Set the relaxation parameter (w) to 1.0
 
-TEST_CASE("Incomplete Cholesky Factorization") {
+    std::vector<double> x_expected = {1.0, 1.0, 1.0};
+    std::vector<double> x = ssor_iteration(A, b, tol, max_iter, omega);
+
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+}
+
+TEST_CASE("SSOR Iteration (w = 1.5)")
+{
+    const std::vector<std::vector<double>> A = {{4.0, 1.0, 1.0}, {1.0, 4.0, 1.0}, {1.0, 1.0, 4.0}};
+    const std::vector<double> b = {6.0, 6.0, 6.0};
+    const double tol = 1e-6;
+    const int max_iter = 100;
+    const double omega = 1.5;  // Set the relaxation parameter (w) to 1.5
+
+    std::vector<double> x_expected = {1.0, 1.0, 1.0};
+    std::vector<double> x = ssor_iteration(A, b, tol, max_iter, omega);
+
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+}
+
+TEST_CASE("SSOR Iteration (w = 0.5)")
+{
+    const std::vector<std::vector<double>> A = {{4.0, 1.0, 1.0}, {1.0, 4.0, 1.0}, {1.0, 1.0, 4.0}};
+    const std::vector<double> b = {6.0, 6.0, 6.0};
+    const double tol = 1e-2;
+    const int max_iter = 100;
+    const double omega = 0.5;  // Set the relaxation parameter (w) to 0.5
+
+    std::vector<double> x_expected = {1.0, 1.0, 1.0};
+    std::vector<double> x = ssor_iteration(A, b, tol, max_iter, omega);
+
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+}
+
+TEST_CASE("Incomplete Cholesky Factorization 1") {
     // Create a matrix A
-    vector<vector<double>> A = {{4.0, -1.0, 2.0},
-                                {-1.0, 6.0, -4.0},
-                                {2.0, -4.0, 8.0}};
+    vector<vector<double>> A = {{2, -1, 0},
+                                {-1, 2, -1},
+                                {0, -1, 2}};
 
     // Compute the incomplete Cholesky factorization of A
-    vector<vector<double>> L = incompleteCholesky(A, 1e-12);
+    vector<vector<double>> K = incompleteCholesky(A, 1e-1);
+    // PRINT_MATRIX(K);
+    auto KKt = mult_matrix(K, transpose(K));
+    CHECK_MATRIX_EQ(KKt, A, 1e-12);
+}
 
-    auto LLt = mult_matrix(L, transpose(L));
-    vector<vector<double>> LLt_expected = {{4.0, -1.0, 2.0},
-                                           {-1.0, 6.0, -4.5},
-                                           {2.0, -4.5, 8.0}};
+TEST_CASE("Incomplete Cholesky Factorization 2") {
+    // Create a matrix A
+    vector<vector<double>> A = {{4, 0, 0, 0}, 
+                                {0, 6, 0, 2}, 
+                                {0, 0, 8, 0}, 
+                                {0, 2, 0, 10}};
 
-    CHECK_MATRIX_EQ(LLt, LLt_expected, 1e-12);
+    // Compute the incomplete Cholesky factorization of A
+    vector<vector<double>> K = incompleteCholesky(A, 1e-12);
+    auto KKt = mult_matrix(K, transpose(K));
+    vector<vector<double>> KKt_expected = {{4, 0, 0, 0}, 
+                                           {0, 6, 0, 2}, 
+                                           {0, 0, 8, 0}, 
+                                           {0, 2, 0, 10}};
+    CHECK_MATRIX_EQ(KKt, A, 1e-12);
+}
+
+TEST_CASE("Incomplete Cholesky Factorization 3") {
+    std::vector<std::vector<double>> A = {{4, 12, -16}, {12, 37, -43}, {-16, -43, 98}};
+    std::vector<std::vector<double>> K = incompleteCholesky(A, 1e-12);
+    auto KKt = mult_matrix(K, transpose(K));
+    CHECK_MATRIX_EQ(KKt, A, 1e-12);
+}
+
+TEST_CASE("Incomplete Cholesky Factorization 4") {
+    // Create a matrix A
+    vector<vector<double>> A = {{3.0, -1.0, 0.0},
+                                {-1.0, 3.0, -1.0},
+                                {0.0, -1.0, 3.0}};
+
+    // Compute the incomplete Cholesky factorization of A
+    vector<vector<double>> K = incompleteCholesky(A, 1e-12);
+    // PRINT_MATRIX(K);
+    auto KKt = mult_matrix(K, transpose(K));
+    CHECK_MATRIX_EQ(KKt, A, 1e-12);
 }
