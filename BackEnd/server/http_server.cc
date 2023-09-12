@@ -1,147 +1,108 @@
 #include "http_server.h"
+#include "function_map.h"
 
-#include <sstream>
 #include <iostream>
-#include <vector>
 
-const int BUFFER_SIZE = 30720;
- 
 
-namespace http {
-    /**
-     * @brief Construct a new HTTPServer::HTTPServer object and initialize the port, ip, sock struct
-     * 
-     * @param ipAddress 
-     * @param port 
-     */
-    HTTPServer::HTTPServer(std::string ipAddress, int port) : mIpAddress(ipAddress), mPort(port), 
-        mSocketAddrLen(sizeof(mSocketAddress)) {
-        mSocketAddress.sin_family = AF_INET;
-        mSocketAddress.sin_port = htons(mPort);
-        mSocketAddress.sin_addr.s_addr = inet_addr(mIpAddress.c_str());
+namespace Capstone {
 
-        if (startServer() != 0) {
-            std::cout << "Failed to start server with PORT: " << ntohs(mSocketAddress.sin_port) << "\n";
-        }
-    }
+    HTTPServer::HTTPServer(int port, std::string ipAddress) 
+        : mPort(port), mIpAddress(ipAddress){ }
+
 
     HTTPServer::~HTTPServer() {
-        closeServer();
+        
     }
 
     /**
-     * @brief Start the server by seeing if the socket can be created with the appropriate address, handle 
-     * errors if neccesary
+     * @brief Handle the client once the connection is accepted and asynchronously read the data being inputted into a buffer
+     * and then that buffer will be parsed and processed.
      * 
-     * @return int 
+     * @param bSocket 
      */
-    int HTTPServer::startServer() {
-        mSocket = socket(AF_INET, SOCK_STREAM, 0);
-        if (mSocket < 0) {
-            std::cout << "Cannot create socket\n";
-            return 1;
-        }
-
-        if (bind(mSocket, (sockaddr *)&mSocketAddress, mSocketAddrLen) < 0) {
-            std::cout << "Cannot connect socket to address\n";
-            return 1;
-        }
-
-        return 0;
-    }
-
-    void HTTPServer::closeServer() {
-        close(mSocket);
-        close(mNewSocket);
-        exit(0);
+    void HTTPServer::handleClients(std::shared_ptr<boost::asio::ip::tcp::socket> bSocket) {
+        std::vector<char> received_data(1024);
+        bSocket->async_read_some(asio::buffer(received_data),
+            [this, bSocket, &received_data](const boost::system::error_code& error, std::size_t bytesRead) {
+                if (!error) {
+                    std::string clientData(received_data.begin(), received_data.begin() + bytesRead);
+                    std::cout << clientData << "\n";
+                    handleClients(bSocket);
+                } else if (error == asio::error::eof){
+                    std::cout << "Client disconnected\n";
+                } else {
+                    std::cerr << "Error reading from client: " << error.message() << "\n";
+                }
+        });
     }
 
     /**
-     * @brief Start listening on the socket for clients, max 20 clients in the queue at a time
+     * @brief Start asynchronously accepting connections, once a connection is accepted, we want to handle it. If their is an error binding this
+     * bSocket to the accept, then an error is thrown. Keep calling start accepts
      * 
      */
-    void HTTPServer::startListen() {
-        if (listen(mSocket, 20) < 0) {
-            std::cout << "Socket listen failed\n";
-        }
-
-        std::cout << " Listening on ADDRESS " << inet_ntoa(mSocketAddress.sin_addr) 
-            << " PORT: " << ntohs(mSocketAddress.sin_port) << "\n";
-        ssize_t bytesReceived;
-
-        while (true) {
-            acceptConnection(mNewSocket);
-
-            std::vector<char> buffer(BUFFER_SIZE, 0);
-            bytesReceived = read(mNewSocket, buffer.data(), BUFFER_SIZE);
-            if (bytesReceived < 0) {
-               std::cerr << "Failed to read bytes from client socket connection\n";
-               exit(0);
-            }
-
-            std::cout <<  "Received Request from client\n";
-
-            printClientMessage(buffer);
-            mServerMsg = handleResponse();
-            sendResponse();
-
-            close(mNewSocket);
+    void HTTPServer::startAccepts(asio::ip::tcp::acceptor &acceptor, asio::io_context &context) {
+        try {
+            std::shared_ptr<boost::asio::ip::tcp::socket> bSocket(new boost::asio::ip::tcp::socket(context));
+            std::cout << "Waiting for client" << std::endl;
+            acceptor.async_accept(*bSocket, [this, bSocket, &acceptor, &context](const boost::system::error_code& bErrorCode) {
+                if (!bErrorCode) {
+                    std::cout << "Client connected" << std::endl;
+                    handleClients(bSocket);
+                } else {
+                    std::cout << "Boost Error: " << " (" << bErrorCode.value() << ") " << bErrorCode.message() << std::endl;
+                }
+                startAccepts(acceptor, context);
+            });
+        } catch (const boost::system::system_error& bException) {
+            std::cout << "Boost Error: " << bException.what() << std::endl;
         }
     }
 
     /**
-     * @brief Print the message from the client, will maybe log it or something later on
+     * @brief Initialize the endpoint with the ip address and port passed to the server
      * 
-     * @param clientData 
      */
-    void HTTPServer::printClientMessage(std::vector<char> clientData) {
-        for (size_t i = 0; i < clientData.size(); ++i) {
-            std::cout << clientData[i];
-        }
+    void HTTPServer::init() {
+        try {
+            asio::io_context bContext;
+            asio::ip::tcp::acceptor bAcceptor(bContext);
 
-        std::cout << "\n";
-    }
+            configureServerSettings(bContext, bAcceptor);
 
-    /**
-     * @brief Accept the connection, handle the error and print it if neccessary
-     * 
-     * @param newSocket 
-     */
-    void HTTPServer::acceptConnection(int &newSocket) {
-        newSocket = accept(mSocket, (sockaddr *)&mSocketAddress, &mSocketAddrLen);
-        if (newSocket < 0) {
-             std::cerr << "Server failed to accept incoming connection from ADDRESS: " << inet_ntoa(mSocketAddress.sin_addr) 
-                << "; PORT: " << ntohs(mSocketAddress.sin_port) << "\n";
+            startAccepts(bAcceptor, bContext);
+
+            bContext.run();
+        } catch (const boost::system::system_error &bException) {
+            std::cout << "Boost system error: " << bException.what() << std::endl;
         }
     }
 
     /**
-     * @brief Construct a response, for right now this is just a simple hello back
+     * @brief Create a server endpoint and bind the acceptor to that endpoint
      * 
-     * @return std::string 
+     * @param context 
+     * @param acceptor 
      */
-    std::string HTTPServer::handleResponse() {
-        std::string response = "Hello from server";
-
-        return response;
-    }
-
-    /**
-     * @brief Write the response to the socket and send it back to client, handle errors
-     * 
-     */
-    void HTTPServer::sendResponse() {
-        ssize_t bytesSent;
-
-        bytesSent = write(mNewSocket, mServerMsg.c_str(), mServerMsg.size());
-
-        if (bytesSent == mServerMsg.size()) {
-            std::cout << "Server Response sent to client\n";
-        }
-        else {
-            std::cerr << "Error sending response to client\n";
+    void HTTPServer::configureServerSettings(asio::io_context &context, asio::ip::tcp::acceptor &acceptor) {
+        try {
+            asio::ip::tcp::endpoint sEndpoint(asio::ip::address_v4(), this->mPort);
+            acceptor.open(sEndpoint.protocol());
+            acceptor.bind(sEndpoint);
+            acceptor.listen();
+        } catch (const boost::system::system_error &bException) {
+            std::cout << "Boost system error: " << bException.what() << std::endl;
         }
     }
+
+
+
+    
+
+
+
+
+
 
 
 

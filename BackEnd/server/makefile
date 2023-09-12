@@ -9,7 +9,7 @@ tmp  := $(shell mkdir -p $(ODIR))
 # Basic compiler configuration and flags
 CXX      = g++
 CXXFLAGS = -MMD -O3 -Wall -shared -std=c++17 -fopenmp -fPIC  $(CXXEXTRA)
-LDFLAGS	 = -m$(BITS) -lpthread -lrt -lcrypt -ldl -lutil -lm -lm -fopenmp
+LDFLAGS	 = -m$(BITS) -lpthread -lrt -lcrypt -ldl -lutil -lm -lm -fopenmp 
 
 # The basenames of the c++ files that this program uses
 CXXFILES = server_main http_server
