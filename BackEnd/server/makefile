@@ -8,11 +8,11 @@ tmp  := $(shell mkdir -p $(ODIR))
 
 # Basic compiler configuration and flags
 CXX      = g++
-CXXFLAGS = -MMD -O3 -Wall -shared -std=c++17 -fopenmp -fPIC  $(CXXEXTRA)
+CXXFLAGS = -MMD -O3 -Wall -Wreorder -shared -std=c++17 -fopenmp -fPIC  $(CXXEXTRA)
 LDFLAGS	 = -m$(BITS) -lpthread -lrt -lcrypt -ldl -lutil -lm -lm -fopenmp 
 
 # The basenames of the c++ files that this program uses
-CXXFILES = server_main http_server
+CXXFILES = server_main http_server parse_requests
 
 # The executable we will build
 TARGET = $(ODIR)/CapstoneServer.exe
@@ -33,7 +33,7 @@ clean:
 	@rm -rf $(ODIR)
 
 # build an .o file from a .cc file
-$(ODIR)/%.o: %.cc
+$(ODIR)/%.o: src/%.cc
 	@echo [CXX] $< "-->" $@
 	@$(CXX) $(CXXFLAGS) -c -o $@ $<
 
