@@ -5,16 +5,9 @@
 
 
 struct arg_t {
-  int port;                    // The port on which to listen
-  std::string ipAddress;       //IP Address for connection
+  int port;                    
+  std::string ipAddress;       
 
-  /// Construct an arg_t from the command-line arguments to the program
-  ///
-  /// @param argc The number of command-line arguments passed to the program
-  /// @param argv The list of command-line arguments
-  ///
-  /// @throw An intmd5eger exception (1) if an invalid argument is given, or if
-  ///        `-h` is passed in
   arg_t(int argc, char **argv) {
     long opt;
     while ((opt = getopt(argc, argv, "p:f:k:ht:b:i:u:d:r:o:a:")) != -1) {

@@ -13,6 +13,8 @@
 
 namespace Capstone {
     bool parse_request(std::string receivedData, std::size_t bytes);
+
+    std::string extract_json(std::string receivedData);
 }
 
 

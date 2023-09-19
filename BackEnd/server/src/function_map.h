@@ -9,7 +9,7 @@
  */
 void map_id_to_function(size_t funcID) {
     switch (funcID) {
-        case 0x01:
+        case 0x10:
 
     }
 }
