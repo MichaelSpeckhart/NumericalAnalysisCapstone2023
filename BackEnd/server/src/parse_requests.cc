@@ -1,5 +1,8 @@
 #include "parse_requests.h"
 #include "format.h"
+#include "http_server.h"
+
+const std::string EMPTY = "";
 
 
 namespace pt = boost::property_tree;
@@ -14,18 +17,27 @@ namespace pt = boost::property_tree;
  * @return false 
  */
 bool Capstone::parse_request(std::string receivedData, std::size_t bytes) {
-    std::string jsonData = extract_json(receivedData);
-    std::istringstream jsonStream(jsonData);
+    try {
+        std::string jsonData = extract_json(receivedData);
+
+        if (jsonData == EMPTY) {
+            std::cerr << "Error: ill formed JSON, cannot properly extract: " << std::endl;
+        }
+
+        std::istringstream jsonStream(jsonData);
+        pt::ptree jsonTree;
+        pt::read_json(jsonStream, jsonTree);
+
+
+
+
+
+
+    } catch (boost::system::system_error& bException) {
+        std::cerr << "Boost System Error: " << " (" << bException.code() << ") -> " << bException.what() << std::endl;
+        return false;
+    }
     
-    pt::ptree jsonTree;
-
-    pt::read_json(jsonStream, jsonTree);
-
-
-
-
-
-
     return true;
 }
 
@@ -44,7 +56,7 @@ std::string Capstone::extract_json(std::string receivedData) {
 
         if (endPos != std::string::npos) { 
             size_t length = endPos - startPos - 1;
-            std::string result = receivedData.substr(startPos, length + 1);
+            std::string result = receivedData.substr(startPos, length + 2);
 
             return result;
         } else {
@@ -54,5 +66,15 @@ std::string Capstone::extract_json(std::string receivedData) {
         std::cout << "'{' not found." << std::endl;
     }
 
-    return "";
+    return EMPTY;
+}
+
+/**
+ * @brief 
+ * 
+ * @param matrixData 
+ * @return std::vector<double> 
+ */
+std::vector<double> Capstone::parse_matrix(std::string matrixData) {
+
 }
