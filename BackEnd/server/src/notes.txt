@@ -1,0 +1,9 @@
+Meeting 9/21
+
+- Map out possible types of data i.e vector, matrix, scalar in any order 
+- Decide magic number (hex: 0xDEADBEEF) as our delimiter
+- Delimiter data type id, data ... delimiter
+    Ex: delimiter vector: 0x1, matrix 0x2, scalar: 0x3
+
+
+    { op: "..." arg data: ".....", data: "....." }
