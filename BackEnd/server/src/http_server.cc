@@ -28,6 +28,16 @@ namespace Capstone {
         
     }
 
+    std::string HTTPServer::constructResponse(std::string responseBody) {
+        std::string response = "HTTP/1.1 200 OK\r\n";
+        response += "Content-Type: text/plain\r\n";
+        response += "Content-Length: " + std::to_string(responseBody.length()) + "\r\n";
+        response += "\r\n"; // Blank line separates headers from the body
+        response += responseBody;
+
+        return response;
+    }
+
     /**
      * @brief Handle the client once the connection is accepted and asynchronously read the data being inputted into a buffer
      * and then that buffer will be parsed and processed.
@@ -49,11 +59,21 @@ namespace Capstone {
                     //TODO: validate the json to make sure fields match up
                     parse_request(clientData, bytesRead);
                     //Recursively call handleClients() 
+                    std::string writeData = "2,2\n2,4,6,8";
+                    std::string response = constructResponse(writeData);
+                    boost::asio::async_write(*bSocket, boost::asio::buffer(response), [bSocket] (const boost::system::error_code& bError, 
+                        std::size_t bytesWritten) {
+                            if (!bError) {
+                                std::cout << "Written Succesfully\n";
+                            } else {
+                                std::cerr << "Nothing was written\n";
+                            }
+                    });
                     handleClients(bSocket);
                 } else if (bErrorCode == boost::asio::error::eof) {
                     std::cout << "Client disconnected." << std::endl;
                 } else {
-                    std::cout << "Boost Error: " << " (" << bErrorCode.value() << ") -> " << bErrorCode.message() << std::endl;
+                    std::cout << "In handle clients: Boost Error: " << " (" << bErrorCode.value() << ") -> " << bErrorCode.message() << std::endl;
                 }
             });
 
@@ -77,13 +97,13 @@ namespace Capstone {
                     std::cout << "Client connected" << std::endl;
                     handleClients(bSocket);
                 } else {
-                    std::cout << "Boost Error: " << " (" << bErrorCode.value() << ") -> " << bErrorCode.message() << std::endl;
+                    std::cout << "Acceptor error: Boost Error: " << " (" << bErrorCode.value() << ") -> " << bErrorCode.message() << std::endl;
                 }
                 startAccepts(acceptor, context);
             });
             bSocket.reset();
         } catch (const boost::system::system_error& bException) {
-            std::cerr << "Boost System Error: " << " (" << bException.code() << ") -> " << bException.what() << std::endl;
+            std::cerr << "In accept clients: Boost System Error: " << " (" << bException.code() << ") -> " << bException.what() << std::endl;
         }
     }
 
@@ -103,7 +123,7 @@ namespace Capstone {
 
             bContext.run();
         } catch (const boost::system::system_error &bException) {
-            std::cerr << "Boost System Error: " << " (" << bException.code() << ") -> " << bException.what() << std::endl;
+            std::cerr << "In Init server: Boost System Error: " << " (" << bException.code() << ") -> " << bException.what() << std::endl;
         }
     }
 
@@ -121,7 +141,7 @@ namespace Capstone {
             acceptor.bind(sEndpoint);
             acceptor.listen();
         } catch (const boost::system::system_error &bException) {
-            std::cerr << "Boost System Error: " << " (" << bException.code() << ") -> " << bException.what() << std::endl;
+            std::cerr << "In Configure Server Settings: Boost System Error: " << " (" << bException.code() << ") -> " << bException.what() << std::endl;
         }
     }
 }

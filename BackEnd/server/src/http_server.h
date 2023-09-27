@@ -42,6 +42,7 @@ namespace Capstone {
             void acceptConnection(int &new_socket);
             std::string handleResponse();
             void sendResponse();
+            std::string constructResponse(std::string responseBody);
             void run(asio::io_context& context);
             void configureServerSettings(asio::io_context &context, asio::ip::tcp::acceptor &acceptor);
             void startAccepts(asio::ip::tcp::acceptor &acceptor, asio::io_context &context);
