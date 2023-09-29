@@ -32,7 +32,7 @@ namespace Capstone {
         std::string response = "HTTP/1.1 200 OK\r\n";
         response += "Content-Type: text/plain\r\n";
         response += "Content-Length: " + std::to_string(responseBody.length()) + "\r\n";
-        response += "\r\n"; // Blank line separates headers from the body
+        response += "\r\n";
         response += responseBody;
 
         return response;
@@ -68,6 +68,7 @@ namespace Capstone {
                             } else {
                                 std::cerr << "Nothing was written\n";
                             }
+                            bSocket->close();
                     });
                     handleClients(bSocket);
                 } else if (bErrorCode == boost::asio::error::eof) {
@@ -76,8 +77,7 @@ namespace Capstone {
                     std::cout << "In handle clients: Boost Error: " << " (" << bErrorCode.value() << ") -> " << bErrorCode.message() << std::endl;
                 }
             });
-
-        bReceivedData.reset();
+            bReceivedData.reset();
     }
 
     /**
@@ -102,9 +102,11 @@ namespace Capstone {
                 startAccepts(acceptor, context);
             });
             bSocket.reset();
+            
         } catch (const boost::system::system_error& bException) {
             std::cerr << "In accept clients: Boost System Error: " << " (" << bException.code() << ") -> " << bException.what() << std::endl;
         }
+    
     }
 
     /**
