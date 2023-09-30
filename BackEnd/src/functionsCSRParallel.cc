@@ -379,58 +379,93 @@ bool gaussian_elimination(std::vector<std::vector<double> > &A) {
 
     return true;
 }
+
+
+/**
+ * @brief The Jacobi Method is an iterative method for determining the solutions of a strictly
+ * diagonally dominant matrix A. Through each iteration, the values of x[i] are approximated through
+ * the formula x[i] = B[i]
+ * 
+ * @param denseMatrix 
+ * @param B 
+ * @param iterations 
+ */
+template <typename T>
+std::vector<T> jacobi_method(CSRMatrix<T> m1, std::vector<T> B, int maxIterations) {
+    if (diagonally_dominant(m1) == false) {
+        throw std::invalid_argument("Input matrix is not diagonally dominant");
+    }
+    std::vector<T> xValues(B.size(), 0.0);
+    std::vector<T> approxValues(B.size(), 0.0);
+    int iterations = 0;
+    while (iterations < maxIterations) {
+        tbb::parallel_for( tbb::blocked_range<size_t>(0, m1.numRows), [&](tbb::blocked_range<size_t> r){
+        for(size_t i = r.begin(); i < r.end(); i++){
+            size_t a1 = m1.row_ptr.at(i);
+            size_t b1 = m1.row_ptr.at(i + 1);
+            T sum = 0.0;
+            T diagonal = 0.0;
+            while(a1 < b1){
+                if(m1.col_ind[a1] == i){
+                    diagonal = m1.val[a1];
+                }else{
+                    sum += m1.val[a1] * xValues[m1.col_ind[a1]];
+                }
+                a1++;
+            }
+            //no devide by zero error becuase of diagonally dominant check
+            approxValues[i] = (B[i] - sum) / diagonal;
+            xValues = approxValues;
+            iterations++;
+        }});
+    
+}
+return approxValues;
 }
 
-//testing/benchmarking code
+}
+
 // int main() {
+//     size_t N = 100000;
+//     vector<vector<double>> dense(N, vector<double>(N, 0.0));
+//     vector<double> B(N, 1.0);
+//     for (int i = 0; i < N; ++i) {
+//         dense[i][i] = 2.0;
+//         if (i >0) {
+//             dense[i][i-1] = -1.0;
+//         } 
+//         if (i < N - 1) {
+//             dense[i][i+1] = -1.0;
+//         }
+//     }
+//     CSRMatrix<double> sparse = from_vector(dense);
+//     // vector<double> resultCSR = parallel::jacobi_method(sparse, B, 20);
+//     // vector<double> resultDense = parallel::jacobi_method(dense, B, 20);
+//     // for(size_t i = 0 ; i < resultDense.size();i++){
+//     //     if(resultDense[i] != resultCSR[i]){
+//     //         cerr<< "yikes!" << endl;
+//     //     }
+//     // }
+//     // cerr << "Yay!" << endl;
 //     timer stopwatch;
 //     std::vector<vector<double> > parallel;
 //     std::vector<vector<double> > serial;
 //     parallel.resize(16);
 //     serial.resize(16);
-//     CSRMatrix<double> m1 = load_fileCSR<double>("stomach.mtx");
-//     CSRMatrix<double> m3 = transpose_matrixCSR(m1);
-//     // CSRMatrix<double> one = add_matrixCSR(m3,m1);
-//     // CSRMatrix<double> two = parallel::add_matrixCSR(m3,m1,16);
-//     // if(one.numRows != two.numRows){
-//     //     cerr << "yikes" << endl;
-//     // }
-//     // if(one.numColumns != two.numColumns){
-//     //     cerr << "yikes"<< endl;
-//     // }
-//     // if(one.row_ptr.size() != two.row_ptr.size()){
-//     //     cerr << "yikes"<< endl;
-//     // }
-//     // if(one.col_ind.size() != two.col_ind.size()){
-//     //     cerr << "yikes"<< endl;
-//     // }
-//     // if(one.val.size() != two.val.size()){
-//     //     cerr << "yikes"<< endl;
-//     // }
-//     // for(size_t i = 0 ; i <one.row_ptr.size();i++){
-//     //     if(one.row_ptr[i] != two.row_ptr[i]){
-//     //     cerr << "yikes"<< endl;
-//     // }
-//     // }
-//     // for(size_t i = 0 ; i <one.col_ind.size();i++){
-//     //      if(one.col_ind[i] != two.col_ind[i]){
-//     //     cerr << "yikes"<< endl;
-//     // }
-//     // }
-//     // for(size_t i = 0 ; i <one.val.size();i++){
-//     //     if(one.val[i] != two.val[i]){
-//     //     cerr << "yikes"<< endl;
-//     // }
-//     // }
-//     // cerr<< "yay!";
 //     for(size_t i = 0 ; i <16;i++){
-//         for(size_t j = 0; j <10;j++){
-//             stopwatch.elapsed();
-//             parallel::add_matrixCSR(m1,m3,i+1);
-//             parallel[i].push_back(stopwatch.elapsed());
-//             stopwatch.elapsed();
-//             add_matrixCSR(m1,m3);
-//             serial[i].push_back(stopwatch.elapsed());
+//         for(size_t j = 0; j <5;j++){
+//             tbb::task_arena arena(i+1);
+// 	        	arena.execute([&]() {
+//                 stopwatch.elapsed();
+//                 parallel::jacobi_method(sparse, B, 20);
+//                 parallel[i].push_back(stopwatch.elapsed());
+//             });
+//             if(i == 0){
+//                 stopwatch.elapsed();
+//                 jacobi_method(sparse, B, 20);
+//                 serial[i].push_back(stopwatch.elapsed());
+//             }
+            
 //         }
 //     }
 //     for(size_t i = 0; i < parallel.size();i++){
@@ -449,5 +484,5 @@ bool gaussian_elimination(std::vector<std::vector<double> > &A) {
 //         cerr<< time/serial[0].size() << ",";
 //     }
 //     cerr<< endl;
-//     return 0;
+//   return 0;
 // }
