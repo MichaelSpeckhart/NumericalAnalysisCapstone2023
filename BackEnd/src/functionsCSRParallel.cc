@@ -48,12 +48,13 @@ T find_max_CSR(CSRMatrix<T> m1)
     );}
 
 template<typename T>
+//to store the column and value vectors in the CSR format
 class VectorPair{
     public:
     vector<size_t> vec1;
     vector<T> vec2;
 
-    VectorPair() : vec1(), vec2() {} // default constructor
+    VectorPair() : vec1(), vec2() {}
 };
 
 /// @brief Adds two compressed spares row(CSR) matrixes together
@@ -77,15 +78,19 @@ CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
     returnMatrix.numRows = m1.numRows;
     returnMatrix.numColumns = m1.numColumns;
     returnMatrix.row_ptr.push_back(0);
-    const auto processor_count = std::thread::hardware_concurrency();;
+    //set the processor count to the number of available number of threads
+    const auto processor_count = std::thread::hardware_concurrency();
+    //vector of vector pairs to store the results of each thread
     std::vector<vector<VectorPair<T>>> result;
+    //resize to ensure each thread has a place to put it's results
     result.resize(processor_count);
     //the vector of threads
   	std::vector<std::thread> threadPool;
 	threadPool.reserve(processor_count);
-    //lambda to run
+    //lambda to do the add
     auto do_work = [&](int k){
         vector<VectorPair<T>> v;
+        //increments by processor count and starts at k to divide work evenly
 		for (size_t i = k; i < m1.numRows; i += processor_count){
         VectorPair<T> row;
         size_t a1 = m1.row_ptr.at(i);
@@ -132,6 +137,7 @@ CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
         }
         v.push_back(row);
         }
+        //store the result of the thread in the vector before returning
         result[k] = v;
 	};
 
@@ -143,7 +149,7 @@ CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
 	for(auto & val : threadPool){
     	val.join();
 	}
-    //merge results
+    //merge results of each thread into one CSRMatrix
     for (size_t i = 0; i < m1.numRows; i++){
         returnMatrix.col_ind.insert(returnMatrix.col_ind.end(),result[i%processor_count][i/processor_count].vec1.cbegin(),result[i%processor_count][i/processor_count].vec1.cend());
         returnMatrix.val.insert(returnMatrix.val.end(),result[i%processor_count][i/processor_count].vec2.cbegin(),result[i%processor_count][i/processor_count].vec2.cend());
@@ -153,6 +159,7 @@ CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
 }
 
 //this matrix code is correct and uses TBB, but it is slow and does not scale well
+//it paralyzes over each column
 // template<typename T>
 // class VectorPair{
 //     public:
@@ -258,15 +265,18 @@ CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
     returnMatrix.numColumns = m2.numColumns;
     returnMatrix.row_ptr.push_back(0);
     CSRMatrix<T> m2t = transpose_matrixCSR(m2);
+    //set the processor count to the number of available number of threads
     const auto processor_count = std::thread::hardware_concurrency();;
     std::vector<vector<VectorPair<T>>> result;
+    //ensures there is a spot for each threads result
     result.resize(processor_count);
     //the vector of threads
   	std::vector<std::thread> threadPool;
 	threadPool.reserve(processor_count);
-    //lambda to run
+    //lambda to do the multiply for each thread
     auto do_work = [&](int k){
         vector<VectorPair<T>> v;
+         //increments by processor count and starts at k to divide work evenly
 		for (size_t i = k; i < m1.numRows; i += processor_count){
         VectorPair<T> row;
         for (size_t j = 0; j < m2t.numRows; j++)
@@ -301,6 +311,7 @@ CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
         }
         v.push_back(row);
         }
+        //store the threads result before returning
         result[k] = v;
 	};
 
@@ -312,7 +323,7 @@ CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
 	for(auto & val : threadPool){
     	val.join();
 	}
-    //merge results
+    //merge results of each thread into one CSRMatrix
     for (size_t i = 0; i < m1.numRows; i++){
         returnMatrix.col_ind.insert(returnMatrix.col_ind.end(),result[i%processor_count][i/processor_count].vec1.cbegin(),result[i%processor_count][i/processor_count].vec1.cend());
         returnMatrix.val.insert(returnMatrix.val.end(),result[i%processor_count][i/processor_count].vec2.cbegin(),result[i%processor_count][i/processor_count].vec2.cend());
@@ -330,14 +341,14 @@ bool gaussian_elimination(std::vector<std::vector<double> > &A) {
     {
         throw std::invalid_argument("The matrix must be square.");
     }
-     // Iterate over each row in the matrix
+    //Iterate over each row in the matrix
     double pivot;
     timer stopwatch;
     for(size_t i = 0; i < A.size() - 1; i++){
-        // Pivot will be the diagonal
+        //Pivot will be the diagonal
         pivot = A[i][i];
         //stopwatch.elapsed();
-        // Iterate of the remaining row elements
+        //Iterate of the remaining row elements
         tbb::parallel_for( tbb::blocked_range<size_t>(i+1, A[0].size()), [&](tbb::blocked_range<size_t> r){
             for(size_t j = r.begin(); j < r.end(); j++){
                 A[i][j] /= pivot;
@@ -370,6 +381,7 @@ bool gaussian_elimination(std::vector<std::vector<double> > &A) {
 }
 }
 
+//testing/benchmarking code
 // int main() {
 //     timer stopwatch;
 //     std::vector<vector<double> > parallel;
@@ -410,7 +422,7 @@ bool gaussian_elimination(std::vector<std::vector<double> > &A) {
 //     //     cerr << "yikes"<< endl;
 //     // }
 //     // }
-//     // cerr<< "yay?";
+//     // cerr<< "yay!";
 //     for(size_t i = 0 ; i <16;i++){
 //         for(size_t j = 0; j <10;j++){
 //             stopwatch.elapsed();
