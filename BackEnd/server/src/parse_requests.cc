@@ -10,6 +10,7 @@ const size_t MAX_SIZE = 1024;
 
 namespace pt = boost::property_tree;
 
+
 /**
  * @brief Once the service handles the client and receives the data, parse the json to extract
  * the function id, the matrix data, and etc.
@@ -54,7 +55,10 @@ bool Capstone::parse_request(std::string receivedData, std::size_t bytes) {
 
         }
 
-        Capstone::mapIdToFunction(data);
+        auto res = Capstone::mapIdToFunction<std::vector<std::vector<double>>>(data);
+
+
+
 
     // } catch (boost::system::system_error& bException) {
     //     std::cerr << "Boost System Error: " << " (" << bException.code() << ") -> " << bException.what() << std::endl;

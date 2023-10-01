@@ -20,7 +20,8 @@ enum RETURN {
 struct result_t {
     bool succeeded;
     std::string msg;
-    std::vector<uint8_t> data;
+    std::vector<double> vecData;
+    std::vector<std::vector<double>> matData;
 };
 
 struct Received {
