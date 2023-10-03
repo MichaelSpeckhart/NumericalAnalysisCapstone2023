@@ -32,6 +32,9 @@ namespace Capstone {
     std::string HTTPServer::constructResponse(std::string responseBody) {
         std::string response = "HTTP/1.1 200 OK\r\n";
         response += "Content-Type: text/plain\r\n";
+        response += "Access-Control-Allow-Origin: *\r\n"; // Allow CORS
+        response += "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n";
+        response += "Access-Control-Allow-Headers: Content-Type\r\n";
         response += "Content-Length: " + std::to_string(responseBody.length()) + "\r\n";
         response += "\r\n";
         response += responseBody;
