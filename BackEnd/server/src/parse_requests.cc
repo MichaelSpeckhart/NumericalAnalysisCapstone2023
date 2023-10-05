@@ -190,7 +190,7 @@ std::string Capstone::serialize_matrix(const std::vector<std::vector<double>> ma
    template <typename T>
    T Capstone::mapIdToFunction(FunctionData& data) {
        switch (data.mFuncId) {
-            case 0x10: std::cout << "Adding Matrices Together\n"; return {{2, 4}, {6, 8}};
+            case 0x10: std::cout << "Adding Matrices Together\n"; return sum_matrix(data.mFirstMatrix, data.mSecondMatrix);
             case 0x11: std::cout << "";
             case 0x12: std::cout << "Transposing a matrix\n"; return transpose(data.mFirstMatrix);
             case 0x13: std::cout << "";
