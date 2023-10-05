@@ -1,8 +1,7 @@
-#include "parse_requests.h"
-#include "format.h"
-#include "http_server.h"
-#include "function_map.h"
 #include <typeinfo>
+
+#include "parse_requests.h"
+#include "../test/test_functions.h"
 
 const std::string EMPTY = "";
 const size_t MAX_SIZE = 1024;
@@ -20,13 +19,15 @@ namespace pt = boost::property_tree;
  * @return true 
  * @return false 
  */
-bool Capstone::parse_request(std::string receivedData, std::size_t bytes) {
+result_t Capstone::parse_request(std::string receivedData, std::size_t bytes) {
     // try {
+        result_t result;
         std::string jsonData = extract_json(receivedData);
 
         if (jsonData == EMPTY) {
-            std::cerr << "Error: Ill formed JSON, cannot properly extract: " << std::endl;
-            return false;
+            result.succeeded = false;
+            result.msg = "Error: Ill formed JSON, cannot properly extract\n";
+            return result;
         }
 
         std::cout << jsonData << std::endl;
@@ -57,7 +58,12 @@ bool Capstone::parse_request(std::string receivedData, std::size_t bytes) {
 
         auto res = Capstone::mapIdToFunction<std::vector<std::vector<double>>>(data);
 
+        
+        std::string matrixForClient = serialize_matrix(res);
 
+        result.clientMatrix = matrixForClient;
+
+        std::cout << "Matrix for client: " << matrixForClient << "\n";
 
 
     // } catch (boost::system::system_error& bException) {
@@ -65,7 +71,7 @@ bool Capstone::parse_request(std::string receivedData, std::size_t bytes) {
     //     return false;
     // }
     
-    return true;
+    return result;
 }
 
 /**
@@ -125,6 +131,74 @@ std::vector<std::vector<double>> Capstone::parse_matrix(std::string matrixData) 
     }
     
     auto result = deserialize_matrix(matrix, rows, cols);
-
     return result;
 }
+
+/**
+ * @brief Deserialize the matrix from a vector of bytes 
+ * 
+ * @tparam T 
+ * @param byte_data 
+ * @param rows 
+ * @param cols 
+ * @return std::vector<std::vector<T>> 
+ */
+std::vector<std::vector<double>> Capstone::deserialize_matrix(const std::vector<double> matrixVals, size_t rows, size_t cols) {
+    std::vector<std::vector<double>> matrix(rows, std::vector<double>(cols));
+    for (size_t i = 0; i < rows; ++i) {
+        for (size_t j = 0; j < cols; ++j) {
+            matrix[i][j] = matrixVals[i * cols + j];
+        }
+    }
+
+    return matrix;
+}
+
+/**
+ * @brief Serialize the matrix so that it can be sent over to the client
+ * 
+ * @param matrix 
+ * @return std::string 
+ */
+std::string Capstone::serialize_matrix(const std::vector<std::vector<double>> matrix) {
+    size_t rows = matrix.size();
+    size_t cols = matrix[0].size();
+
+    std::string stringMat = "";
+    stringMat.append(std::to_string(rows) + ",");
+    stringMat.push_back(static_cast<char>('0' + cols));
+    stringMat.push_back('\n');
+
+    for (size_t i = 0; i < rows; ++i) {
+        for (size_t j = 0; j < cols; ++j) {
+            stringMat.append(std::to_string(static_cast<int>(matrix[i][j])) + ",");
+        }
+    }
+
+    stringMat.resize(stringMat.size() -1);
+
+    return stringMat;
+    
+
+}
+
+/**
+    * @brief Match the function ID given in the JSON to one of the matrix functions
+    * 
+    * @param funcID 
+    */
+   template <typename T>
+   T Capstone::mapIdToFunction(FunctionData& data) {
+       switch (data.mFuncId) {
+            case 0x10: std::cout << "Adding Matrices Together\n"; return {{2, 4}, {6, 8}};
+            case 0x11: std::cout << "";
+            case 0x12: std::cout << "Transposing a matrix\n"; return transpose(data.mFirstMatrix);
+            case 0x13: std::cout << "";
+            case 0x14: std::cout << "";
+            case 0x15: std::cout << "";
+            default: return {{}};
+       }
+
+       return {{}};
+    }   
+

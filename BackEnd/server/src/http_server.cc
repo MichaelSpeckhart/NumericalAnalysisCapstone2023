@@ -1,6 +1,8 @@
 #include "http_server.h"
 #include "parse_requests.h"
 
+#include <boost/algorithm/string.hpp>
+
 #include <iostream>
 #include <cstddef>
 #include <csignal>
@@ -61,10 +63,11 @@ namespace Capstone {
                     std::string clientData(bReceivedData->begin(), bReceivedData->begin() + bytesRead);
                     //Parse the incoming json
                     //TODO: validate the json to make sure fields match up
-                    if (parse_request(clientData, bytesRead) == false) {
+                    // Ingore initial HTTP stuff
+                    if (boost::starts_with(clientData, "POST \\127.0.0.1")) {
                         return;
                     }
-                    std::string writeData = "2,2\n\n2,4,6,8";
+                    std::string writeData = parse_request(clientData, bytesRead).clientMatrix;
                     std::string response = constructResponse(writeData);
                     boost::asio::async_write(*bSocket, boost::asio::buffer(response), [bSocket] (const boost::system::error_code& bError, 
                         std::size_t bytesWritten) {
