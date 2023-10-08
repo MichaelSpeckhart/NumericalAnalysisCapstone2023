@@ -30,23 +30,28 @@ namespace Capstone {
             ~HTTPServer();
             void startListen();
             void init();
+            void cleanup();
 
         private:
             int mPort;
             std::string mIpAddress;
             long mIncomingMessage;
             std::string mServerMsg;
+            boost::asio::io_context mContext;
+            boost::asio::ip::tcp::acceptor mAcceptor;
 
             int startServer();
             void closeServer();
             void acceptConnection(int &new_socket);
             std::string handleResponse();
             void sendResponse();
+            std::string constructResponse(std::string responseBody);
             void run(asio::io_context& context);
-            void configureServerSettings(asio::io_context &context, asio::ip::tcp::acceptor &acceptor);
-            void startAccepts(asio::ip::tcp::acceptor &acceptor, asio::io_context &context);
+            void configureServerSettings();
+            void startAccepts();
             void handleClients(std::shared_ptr<boost::asio::ip::tcp::socket> sSocket);
             void printClientMessage(std::vector<char> clientData);
+            
     };
 }
 

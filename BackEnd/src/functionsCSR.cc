@@ -445,31 +445,75 @@ CSRMatrix<T> load_fileCSR(string fileName)
     return returnMatrix;
 }
 
-// int main() {
-//     vector<vector<int> > array = {{1,0,0},{4,5,6},{0,8,9}};
-//     vector<vector<int> > array2 = {{0,2,3},{0,-5,0},{7,8,0}};
-//     CSRMatrix<int> matrix = from_vector(array);
-//     CSRMatrix<int> matrix2 = from_vector(array2);
+/**
+ * @brief As a prerequisite for the Jacobi Method, the matrix must be diagonally dominant,
+ * meaning that the elements on the diagonal indices of the matrix are greater or equal to
+ * the sum of the rest of the elements in that row.
+ * 
+ * @param denseMatrix 
+ * @return true If is diagonally dominant
+ * @return false Otherwise
+ */
+template <typename T>
+bool diagonally_dominant(CSRMatrix<T> m1) {
+    for (size_t i = 0; i < m1.numRows; ++i) {
+        size_t a1 = m1.row_ptr.at(i);
+        size_t b1 = m1.row_ptr.at(i + 1);
+        T sum = 0.0;
+        T diagonal = 0.0;
+        while(a1 < b1){
+            if(m1.col_ind[a1] == i){
+                diagonal = std::abs(m1.val[a1]);
+            }else{
+                sum += std::abs(m1.val[a1]);
+            }
+            a1++;
+        }
+        if (diagonal < sum) {
+            return false;
+        }
+    }
+    
+    return true;
+}
 
-//     CSRMatrix<int> matrix3 = add_matrixCSR(matrix, matrix2);
-//     CSRMatrix<int> matrix4 = scalar_multiply_CSR(matrix, 2);
-//     CSRMatrix<int> matrix5 = scalar_multiply_CSR(matrix2, 2);
-//     CSRMatrix<int> matrix6 = subtract_matrixCSR(matrix, matrix2);
-
-//     cout << "Matrix 1" << endl;
-//     print_matrixCSR(matrix);
-//     cout << "Matrix 2" << endl;
-//     print_matrixCSR(matrix2);
-//     cout << "Matrix 3" << endl;
-//     print_matrixCSR(matrix3);
-//     cout << "Matrix 4" << endl;
-//     print_matrixCSR(matrix4);
-//     cout << "Matrix 5" << endl;
-//     print_matrixCSR(matrix5);
-//     cout << "Matrix 6" << endl;
-//     print_matrixCSR(matrix6);
-//     cout << find_min_CSR(matrix) << endl;
-//     cout << find_max_CSR(matrix) << endl;
-
-//     return 0;
-// }
+/**
+ * @brief The Jacobi Method is an iterative method for determining the solutions of a strictly
+ * diagonally dominant matrix A. Through each iteration, the values of x[i] are approximated through
+ * the formula x[i] = B[i]
+ * 
+ * @param denseMatrix 
+ * @param B 
+ * @param iterations 
+ */
+template <typename T>
+std::vector<T> jacobi_method(CSRMatrix<T> m1, std::vector<T> B, int maxIterations) {
+    if (diagonally_dominant(m1) == false) {
+        throw std::invalid_argument("Input matrix is not diagonally dominant");
+    }
+    std::vector<T> xValues(B.size(), 0.0);
+    std::vector<T> approxValues(B.size(), 0.0);
+    int iterations = 0;
+    while (iterations < maxIterations) {
+        for (size_t i = 0; i < m1.numRows; ++i) {
+            size_t a1 = m1.row_ptr.at(i);
+            size_t b1 = m1.row_ptr.at(i + 1);
+            T sum = 0.0;
+            T diagonal = 0.0;
+            while(a1 < b1){
+                if(m1.col_ind[a1] == i){
+                    diagonal = m1.val[a1];
+                }else{
+                    sum += m1.val[a1] * xValues[m1.col_ind[a1]];
+                }
+                a1++;
+            }
+            //no devide by zero error becuase of diagonally dominant check
+            approxValues[i] = (B[i] - sum) / diagonal;
+            xValues = approxValues;
+            iterations++;
+        }
+    
+}
+return approxValues;
+}

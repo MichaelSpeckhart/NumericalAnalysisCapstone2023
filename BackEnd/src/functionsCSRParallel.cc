@@ -48,12 +48,13 @@ T find_max_CSR(CSRMatrix<T> m1)
     );}
 
 template<typename T>
+//to store the column and value vectors in the CSR format
 class VectorPair{
     public:
     vector<size_t> vec1;
     vector<T> vec2;
 
-    VectorPair() : vec1(), vec2() {} // default constructor
+    VectorPair() : vec1(), vec2() {}
 };
 
 /// @brief Adds two compressed spares row(CSR) matrixes together
@@ -77,15 +78,19 @@ CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
     returnMatrix.numRows = m1.numRows;
     returnMatrix.numColumns = m1.numColumns;
     returnMatrix.row_ptr.push_back(0);
-    const auto processor_count = std::thread::hardware_concurrency();;
+    //set the processor count to the number of available number of threads
+    const auto processor_count = std::thread::hardware_concurrency();
+    //vector of vector pairs to store the results of each thread
     std::vector<vector<VectorPair<T>>> result;
+    //resize to ensure each thread has a place to put it's results
     result.resize(processor_count);
     //the vector of threads
   	std::vector<std::thread> threadPool;
 	threadPool.reserve(processor_count);
-    //lambda to run
+    //lambda to do the add
     auto do_work = [&](int k){
         vector<VectorPair<T>> v;
+        //increments by processor count and starts at k to divide work evenly
 		for (size_t i = k; i < m1.numRows; i += processor_count){
         VectorPair<T> row;
         size_t a1 = m1.row_ptr.at(i);
@@ -132,6 +137,7 @@ CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
         }
         v.push_back(row);
         }
+        //store the result of the thread in the vector before returning
         result[k] = v;
 	};
 
@@ -143,7 +149,7 @@ CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
 	for(auto & val : threadPool){
     	val.join();
 	}
-    //merge results
+    //merge results of each thread into one CSRMatrix
     for (size_t i = 0; i < m1.numRows; i++){
         returnMatrix.col_ind.insert(returnMatrix.col_ind.end(),result[i%processor_count][i/processor_count].vec1.cbegin(),result[i%processor_count][i/processor_count].vec1.cend());
         returnMatrix.val.insert(returnMatrix.val.end(),result[i%processor_count][i/processor_count].vec2.cbegin(),result[i%processor_count][i/processor_count].vec2.cend());
@@ -153,6 +159,7 @@ CSRMatrix<T> add_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
 }
 
 //this matrix code is correct and uses TBB, but it is slow and does not scale well
+//it paralyzes over each column
 // template<typename T>
 // class VectorPair{
 //     public:
@@ -258,15 +265,18 @@ CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
     returnMatrix.numColumns = m2.numColumns;
     returnMatrix.row_ptr.push_back(0);
     CSRMatrix<T> m2t = transpose_matrixCSR(m2);
+    //set the processor count to the number of available number of threads
     const auto processor_count = std::thread::hardware_concurrency();;
     std::vector<vector<VectorPair<T>>> result;
+    //ensures there is a spot for each threads result
     result.resize(processor_count);
     //the vector of threads
   	std::vector<std::thread> threadPool;
 	threadPool.reserve(processor_count);
-    //lambda to run
+    //lambda to do the multiply for each thread
     auto do_work = [&](int k){
         vector<VectorPair<T>> v;
+         //increments by processor count and starts at k to divide work evenly
 		for (size_t i = k; i < m1.numRows; i += processor_count){
         VectorPair<T> row;
         for (size_t j = 0; j < m2t.numRows; j++)
@@ -301,6 +311,7 @@ CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
         }
         v.push_back(row);
         }
+        //store the threads result before returning
         result[k] = v;
 	};
 
@@ -312,7 +323,7 @@ CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
 	for(auto & val : threadPool){
     	val.join();
 	}
-    //merge results
+    //merge results of each thread into one CSRMatrix
     for (size_t i = 0; i < m1.numRows; i++){
         returnMatrix.col_ind.insert(returnMatrix.col_ind.end(),result[i%processor_count][i/processor_count].vec1.cbegin(),result[i%processor_count][i/processor_count].vec1.cend());
         returnMatrix.val.insert(returnMatrix.val.end(),result[i%processor_count][i/processor_count].vec2.cbegin(),result[i%processor_count][i/processor_count].vec2.cend());
@@ -330,14 +341,14 @@ bool gaussian_elimination(std::vector<std::vector<double> > &A) {
     {
         throw std::invalid_argument("The matrix must be square.");
     }
-     // Iterate over each row in the matrix
+    //Iterate over each row in the matrix
     double pivot;
     timer stopwatch;
     for(size_t i = 0; i < A.size() - 1; i++){
-        // Pivot will be the diagonal
+        //Pivot will be the diagonal
         pivot = A[i][i];
         //stopwatch.elapsed();
-        // Iterate of the remaining row elements
+        //Iterate of the remaining row elements
         tbb::parallel_for( tbb::blocked_range<size_t>(i+1, A[0].size()), [&](tbb::blocked_range<size_t> r){
             for(size_t j = r.begin(); j < r.end(); j++){
                 A[i][j] /= pivot;
@@ -368,57 +379,93 @@ bool gaussian_elimination(std::vector<std::vector<double> > &A) {
 
     return true;
 }
+
+
+/**
+ * @brief The Jacobi Method is an iterative method for determining the solutions of a strictly
+ * diagonally dominant matrix A. Through each iteration, the values of x[i] are approximated through
+ * the formula x[i] = B[i]
+ * 
+ * @param denseMatrix 
+ * @param B 
+ * @param iterations 
+ */
+template <typename T>
+std::vector<T> jacobi_method(CSRMatrix<T> m1, std::vector<T> B, int maxIterations) {
+    if (diagonally_dominant(m1) == false) {
+        throw std::invalid_argument("Input matrix is not diagonally dominant");
+    }
+    std::vector<T> xValues(B.size(), 0.0);
+    std::vector<T> approxValues(B.size(), 0.0);
+    int iterations = 0;
+    while (iterations < maxIterations) {
+        tbb::parallel_for( tbb::blocked_range<size_t>(0, m1.numRows), [&](tbb::blocked_range<size_t> r){
+        for(size_t i = r.begin(); i < r.end(); i++){
+            size_t a1 = m1.row_ptr.at(i);
+            size_t b1 = m1.row_ptr.at(i + 1);
+            T sum = 0.0;
+            T diagonal = 0.0;
+            while(a1 < b1){
+                if(m1.col_ind[a1] == i){
+                    diagonal = m1.val[a1];
+                }else{
+                    sum += m1.val[a1] * xValues[m1.col_ind[a1]];
+                }
+                a1++;
+            }
+            //no devide by zero error becuase of diagonally dominant check
+            approxValues[i] = (B[i] - sum) / diagonal;
+            xValues = approxValues;
+            iterations++;
+        }});
+    
+}
+return approxValues;
+}
+
 }
 
 // int main() {
+//     size_t N = 100000;
+//     vector<vector<double>> dense(N, vector<double>(N, 0.0));
+//     vector<double> B(N, 1.0);
+//     for (int i = 0; i < N; ++i) {
+//         dense[i][i] = 2.0;
+//         if (i >0) {
+//             dense[i][i-1] = -1.0;
+//         } 
+//         if (i < N - 1) {
+//             dense[i][i+1] = -1.0;
+//         }
+//     }
+//     CSRMatrix<double> sparse = from_vector(dense);
+//     // vector<double> resultCSR = parallel::jacobi_method(sparse, B, 20);
+//     // vector<double> resultDense = parallel::jacobi_method(dense, B, 20);
+//     // for(size_t i = 0 ; i < resultDense.size();i++){
+//     //     if(resultDense[i] != resultCSR[i]){
+//     //         cerr<< "yikes!" << endl;
+//     //     }
+//     // }
+//     // cerr << "Yay!" << endl;
 //     timer stopwatch;
 //     std::vector<vector<double> > parallel;
 //     std::vector<vector<double> > serial;
 //     parallel.resize(16);
 //     serial.resize(16);
-//     CSRMatrix<double> m1 = load_fileCSR<double>("stomach.mtx");
-//     CSRMatrix<double> m3 = transpose_matrixCSR(m1);
-//     // CSRMatrix<double> one = add_matrixCSR(m3,m1);
-//     // CSRMatrix<double> two = parallel::add_matrixCSR(m3,m1,16);
-//     // if(one.numRows != two.numRows){
-//     //     cerr << "yikes" << endl;
-//     // }
-//     // if(one.numColumns != two.numColumns){
-//     //     cerr << "yikes"<< endl;
-//     // }
-//     // if(one.row_ptr.size() != two.row_ptr.size()){
-//     //     cerr << "yikes"<< endl;
-//     // }
-//     // if(one.col_ind.size() != two.col_ind.size()){
-//     //     cerr << "yikes"<< endl;
-//     // }
-//     // if(one.val.size() != two.val.size()){
-//     //     cerr << "yikes"<< endl;
-//     // }
-//     // for(size_t i = 0 ; i <one.row_ptr.size();i++){
-//     //     if(one.row_ptr[i] != two.row_ptr[i]){
-//     //     cerr << "yikes"<< endl;
-//     // }
-//     // }
-//     // for(size_t i = 0 ; i <one.col_ind.size();i++){
-//     //      if(one.col_ind[i] != two.col_ind[i]){
-//     //     cerr << "yikes"<< endl;
-//     // }
-//     // }
-//     // for(size_t i = 0 ; i <one.val.size();i++){
-//     //     if(one.val[i] != two.val[i]){
-//     //     cerr << "yikes"<< endl;
-//     // }
-//     // }
-//     // cerr<< "yay?";
 //     for(size_t i = 0 ; i <16;i++){
-//         for(size_t j = 0; j <10;j++){
-//             stopwatch.elapsed();
-//             parallel::add_matrixCSR(m1,m3,i+1);
-//             parallel[i].push_back(stopwatch.elapsed());
-//             stopwatch.elapsed();
-//             add_matrixCSR(m1,m3);
-//             serial[i].push_back(stopwatch.elapsed());
+//         for(size_t j = 0; j <5;j++){
+//             tbb::task_arena arena(i+1);
+// 	        	arena.execute([&]() {
+//                 stopwatch.elapsed();
+//                 parallel::jacobi_method(sparse, B, 20);
+//                 parallel[i].push_back(stopwatch.elapsed());
+//             });
+//             if(i == 0){
+//                 stopwatch.elapsed();
+//                 jacobi_method(sparse, B, 20);
+//                 serial[i].push_back(stopwatch.elapsed());
+//             }
+            
 //         }
 //     }
 //     for(size_t i = 0; i < parallel.size();i++){
@@ -437,5 +484,5 @@ bool gaussian_elimination(std::vector<std::vector<double> > &A) {
 //         cerr<< time/serial[0].size() << ",";
 //     }
 //     cerr<< endl;
-//     return 0;
+//   return 0;
 // }

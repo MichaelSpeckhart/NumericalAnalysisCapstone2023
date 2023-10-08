@@ -1,20 +1,19 @@
 #include "http_server.h"
 
+#include <boost/enable_shared_from_this.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/ref.hpp>
+
 #include <iostream>
 #include <string>
+#include <memory>
 
 
 struct arg_t {
-  int port;                    // The port on which to listen
-  std::string ipAddress;       //IP Address for connection
+  int port;                    
+  std::string ipAddress;       
 
-  /// Construct an arg_t from the command-line arguments to the program
-  ///
-  /// @param argc The number of command-line arguments passed to the program
-  /// @param argv The list of command-line arguments
-  ///
-  /// @throw An intmd5eger exception (1) if an invalid argument is given, or if
-  ///        `-h` is passed in
   arg_t(int argc, char **argv) {
     long opt;
     while ((opt = getopt(argc, argv, "p:f:k:ht:b:i:u:d:r:o:a:")) != -1) {
@@ -33,7 +32,7 @@ struct arg_t {
   }
 
   static void usage(char *progname) {
-    std::cout << basename(progname) << ": company user directory server\n"
+    std::cout << basename(progname) << ": \n"
          << "  -p [int]    Port on which to listen for incoming connections\n"
          << "  -a [string] IP Address that the server is connected to\n"
          << "  -h          Print help (this message)\n";
@@ -51,11 +50,14 @@ int main(int argc, char **argv) {
         return 1;
     }
  
-
+    boost::asio::io_service service;
     HTTPServer server = HTTPServer(args->port, args->ipAddress);
+
+
 
     server.init();
 
+    server.cleanup();
 
     return 0;
 

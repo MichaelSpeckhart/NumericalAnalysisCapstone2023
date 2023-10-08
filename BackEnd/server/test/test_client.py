@@ -5,7 +5,7 @@ def main():
     server_ip = "127.0.0.1" 
     server_port = 1025  
 
-    client_data = '{ "name":"John", "age":30, "city":"New York"}'
+    client_data = '{ "operation": 0x10, "args": 1, "matrixData":"2,2 \r\n 1,2,3,4"}'
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
         client_socket.connect((server_ip, server_port))
@@ -22,3 +22,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
