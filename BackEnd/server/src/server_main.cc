@@ -1,7 +1,13 @@
 #include "http_server.h"
 
+#include <boost/enable_shared_from_this.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/ref.hpp>
+
 #include <iostream>
 #include <string>
+#include <memory>
 
 
 struct arg_t {
@@ -26,7 +32,7 @@ struct arg_t {
   }
 
   static void usage(char *progname) {
-    std::cout << basename(progname) << ": company user directory server\n"
+    std::cout << basename(progname) << ": \n"
          << "  -p [int]    Port on which to listen for incoming connections\n"
          << "  -a [string] IP Address that the server is connected to\n"
          << "  -h          Print help (this message)\n";
@@ -44,11 +50,14 @@ int main(int argc, char **argv) {
         return 1;
     }
  
-
+    boost::asio::io_service service;
     HTTPServer server = HTTPServer(args->port, args->ipAddress);
+
+
 
     server.init();
 
+    server.cleanup();
 
     return 0;
 
