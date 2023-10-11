@@ -128,7 +128,7 @@ TEST_CASE("Jacobi Iteration Parallel")
     const int max_iter = 100;
 
     std::vector<double> x_expected = {1.0, 1.0, 1.0};
-    std::vector<double> x = parallel::jacobi_method_parallel(A, b, tol, max_iter);
+    std::vector<double> x = parallel::jacobi_method_parallel(A, b, max_iter);
 
     CHECK_VECTOR_EQ(x, x_expected, tol);
 }
