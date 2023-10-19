@@ -11,53 +11,70 @@
 #include <cstdlib>
 #include <vector>
 #include <string>
+#include <type_traits>
+#include <tuple>
+#include <list>
 
 
 
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
-    struct result_t {
-        bool succeeded;
-        std::string msg;
-        std::vector<double> vecData;
-        std::vector<std::vector<double>> matData;
-        std::string clientMatrix;
-    };
+inline const std::string MAGIC_NUMBER = "XXXX";
 
-    struct Received {
-        size_t func_id;
-        std::string args;
-        std::vector<std::byte> data;
-    };
+typedef struct result_t {
+    bool succeeded;
+    std::string client_response;
+}result_t;
 
-    /**
-    * @brief Storing all the function data in a struct to easily pass around rather than individual variables
-    * 
-    */
-    struct FunctionData {
-       size_t mFuncId;
-       std::vector<std::vector<double>> mFirstMatrix;
-       std::vector<std::vector<double>> mSecondMatrix;
-       size_t mScalar;
-       std::vector<double> mVector;
-    };
+typedef struct received_t {
+    std::string func_id;
+    std::string exp_resp;
+    std::string data;
+}received_t;
+
+typedef std::vector<std::vector<double>> matrix;
+
+class Result{
+    public: 
+        virtual ~Result() {}
+};
+
+class Scalar : public Result {
+public:
+    double value;
+    Scalar(double v) : value(v) {}
+};
+
+class Vector : public Result {
+public:
+    std::vector<double> values;
+    Vector(const std::vector<double>& v) : values(v) {}
+};
+
+class Matrix : public Result {
+public:
+    matrix values;
+    Matrix(const matrix& v) : values(v) {}
+};
 
 namespace Capstone {
-
-    
 
     result_t parse_request(std::string receivedData, std::size_t bytes);
 
     std::string extract_json(std::string receivedData);
 
-    std::vector<std::vector<double>> parse_matrix(std::string matrixData);
+    std::vector<double> extract_vector(std::string vec_str);
 
-    std::vector<std::vector<double>> deserialize_matrix(const std::vector<double> matrixVals, size_t rows, size_t cols);
-    
-    std::string serialize_matrix(const std::vector<std::vector<double>> matrix);
+    matrix extract_matrix(std::string mat_str);
 
-    template <typename T> T mapIdToFunction(FunctionData& data);
+    std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<matrix>> parse_data(received_t msg);
+
+    std::string serialize_matrix(matrix mat);
+
+    std::string serialize_vector(std::vector<double> vec);
+
+    Result mapIdToFunction(int id, std::tuple<std::vector<double>, std::vector<std::vector<double>>, std::vector<matrix>> data);
 }
 
 #endif
