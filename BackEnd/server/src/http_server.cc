@@ -7,6 +7,8 @@
 #include <cstddef>
 #include <csignal>
 
+using boost::property_tree::ptree;
+
 /**
  * @brief 
  * 
@@ -67,8 +69,23 @@ namespace Capstone {
                     if (boost::starts_with(clientData, "POST \\127.0.0.1")) {
                         return;
                     }
-                    std::string writeData = parse_request(clientData, bytesRead).client_response + MAGIC_NUMBER;
-                    std::string response = constructResponse(writeData);
+                    result_t result = parse_request(clientData, bytesRead);
+                    std::string writeData;
+                    
+                    ptree returnTree;
+                    returnTree.put("operation", 0);
+                    returnTree.put("exp_res", 0);
+                    if(result.succeeded == true){
+                        writeData = result.client_response;
+                        returnTree.put("data", writeData);
+
+                    }else{
+                        writeData = "Error in backend server";
+                    }
+
+                    std::stringstream ss;
+                    boost::property_tree::json_parser::write_json(ss, returnTree);
+                    std::string response = constructResponse(ss.str());
                     boost::asio::async_write(*bSocket, boost::asio::buffer(response), [bSocket] (const boost::system::error_code& bError, 
                         std::size_t bytesWritten) {
                             if (!bError) {

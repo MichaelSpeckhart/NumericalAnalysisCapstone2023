@@ -44,13 +44,13 @@ result_t Capstone::parse_request(std::string receivedData, std::size_t bytes) {
     |  Matrix --> 2 |
     |_______________|
     */
-    /* msg.exp_resp = jsonTree.get<std::string>("exp_resp");   */
+    /* msg.exp_resp = jsonTree.get<std::string>("exp_resp");  */
     msg.data = jsonTree.get<std::string>("data");
     
     uint32_t id = std::stoi(msg.func_id); /* convert from string to uint32_t */
     std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<matrix>> data = Capstone::parse_data(msg); /* data tuple */
-/*     uint32_t exp_resp = std::stoul(msg.exp_resp);
- */    Capstone::map_func(id, data, &result);
+    /* uint32_t exp_resp = std::stoul(msg.exp_resp); */
+    Capstone::map_func(id, data, &result);
         
     return result;
 }
@@ -86,36 +86,35 @@ std::string Capstone::extract_json(std::string receivedData) {
 
 std::vector<double> Capstone::extract_vector(std::string vec_str){
     std::cout << " extract vector called\n" << std::endl;
-    size_t pos = 0;
     std::vector<double> result;
-    while((pos = vec_str.find(',')) != std::string::npos){
-        result.push_back(std::stod(vec_str.substr(0, pos + 1)));
-        vec_str.erase(0, pos + 1);
+    std::istringstream ss(vec_str);
+    std::string token;
+    while (std::getline(ss, token, ',')) {
+        double num = std::stod(token);
+        result.push_back(num);
     }
-    result.push_back(std::stod(vec_str)); //get the last element
     return result;
 }
 
 matrix Capstone::extract_matrix(std::string mat_str){
     std::cout << " extract matrix called\n" << std::endl;
+    std::cout << "PASS: " + mat_str << std::endl;
     size_t newline = mat_str.find('\n');
-    std::string dim = mat_str.substr(0, newline);
-    std::string data = mat_str.substr(newline + 1, mat_str.length() - 1);
-    size_t curr = 0;
+    /* extract dimensions without newline */
+    std::string dim = mat_str.substr(0, newline - 1); 
+    /* extract matrix data without the newline */
+    std::string data = mat_str.substr(newline + 1, mat_str.length() - (newline + 2));
 
-    curr = dim.find(',');
-    int num_rows = std::stoi(dim.substr(0, curr + 1));
-    dim.erase(0, curr + 1);
-    int num_cols = std::stoi(dim);
-
-    std::vector<double> data_vec;
-
-    while((curr = data.find(',')) != std::string::npos){
-        data_vec.push_back(std::stod(data.substr(0, curr + 1)));
-        data.erase(0, curr + 1);
+    std::istringstream ss(dim);
+    int num_rows, num_cols;
+    /* spliting the dimensions of variable length */
+    if(std::getline(ss, dim, ',')){
+        num_rows = std::stoi(dim);
     }
-
-
+    if (std::getline(ss, dim)) {
+        num_cols = std::stoi(dim);
+    }
+    std::vector<double> data_vec = Capstone::extract_vector(data);
     matrix result(num_rows, std::vector<double>(num_cols));
 
     for(int row = 0; row < num_rows; row++){
@@ -137,16 +136,19 @@ std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<mat
     std::vector<matrix> matrices;
 
     while((d_pos = data.find(MAGIC_NUMBER)) != std::string::npos){
-        std::string obj = data.substr(0, d_pos + 1);
+        std::cout << "PASS: " + data << std::endl;
+        std::string obj = data.substr(0, d_pos);
         if(obj.length() == 1){ /* it is a scalar */
             scalars.push_back(std::stod(obj));
+            data.erase(0, d_pos + MAGIC_NUMBER.length());
         }else if(obj.find('\n') == std::string::npos){ /* it is a vector */
             vectors.push_back(Capstone::extract_vector(obj));
+            data.erase(0, d_pos + MAGIC_NUMBER.length());
         }else{ /* it is a matrix */
             matrices.push_back(Capstone::extract_matrix(obj));
+            data.erase(0, d_pos + MAGIC_NUMBER.length());
         }
     }
-        
     return std::make_tuple(scalars, vectors, matrices);
 }
 
