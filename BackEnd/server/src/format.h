@@ -5,12 +5,9 @@
 #include <string>
 #include <vector>
 #include <cstddef>
+#include <cstdint>
 
-enum RESPONSES {
-    
-};
 
-//#include "../src/functions.cc"
 
 enum RETURN {
     SUCCESS = 0,
@@ -49,31 +46,7 @@ struct FunctionData {
  * @param matrix 
  * @return std::vector<byte> 
  */
-// template <typename T>
-// std::vector<std::byte> serialize_matrix(const std::vector<std::vector<T>> matrix) {
-//     std::vector<std::byte> byte_data;
 
-//     for (const auto& row : matrix) {
-//         for (const auto& element : row) {
-//             byte* byte_ptr = reinterpret_cast<byte*>(&element);
-//             for (size_t i = 0; i < sizeof(T); ++i) {
-//                 byte_data.push_back(byte_ptr[i]);
-//             }
-//         }   
-//     }
-
-//     return byte_data;
-// }
-
-// /**
-//  * @brief Deserialize the matrix from a vector of bytes 
-//  * 
-//  * @tparam T 
-//  * @param byte_data 
-//  * @param rows 
-//  * @param cols 
-//  * @return std::vector<std::vector<T>> 
-//  */
 std::vector<std::vector<double>> deserialize_matrix(const std::vector<double> matrixVals, size_t rows, size_t cols) {
     std::vector<std::vector<double>> matrix(rows, std::vector<double>(cols));
     for (size_t i = 0; i < rows; ++i) {

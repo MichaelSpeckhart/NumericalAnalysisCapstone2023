@@ -67,7 +67,7 @@ namespace Capstone {
                     if (boost::starts_with(clientData, "POST \\127.0.0.1")) {
                         return;
                     }
-                    std::string writeData = parse_request(clientData, bytesRead).client_response;
+                    std::string writeData = parse_request(clientData, bytesRead).client_response + MAGIC_NUMBER;
                     std::string response = constructResponse(writeData);
                     boost::asio::async_write(*bSocket, boost::asio::buffer(response), [bSocket] (const boost::system::error_code& bError, 
                         std::size_t bytesWritten) {

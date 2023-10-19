@@ -19,63 +19,39 @@ namespace pt = boost::property_tree;
  * @return false 
  */
 result_t Capstone::parse_request(std::string receivedData, std::size_t bytes) {
-    // try {
-        result_t result;
-        std::string jsonData = extract_json(receivedData);
+    std::cout << " parse_request called\n" << std::endl;
+    result_t result;
+    std::string jsonData = extract_json(receivedData);
 
-        if (jsonData == EMPTY) {
-            result.succeeded = false;
-            result.client_response = "Error: Ill formed JSON, cannot properly extract\n";
-            return result;
-        }
+    if (jsonData == EMPTY) {
+        result.succeeded = false;
+        result.client_response = "Error: Ill formed JSON, cannot properly extract\n";
+        return result;
+    }
 
-        std::cout << jsonData << std::endl;
+    std::cout << jsonData << std::endl;
 
-        std::istringstream jsonStream(jsonData);
-        pt::ptree jsonTree;
-        pt::read_json(jsonStream, jsonTree);
+    std::istringstream jsonStream(jsonData);
+    pt::ptree jsonTree;
+    pt::read_json(jsonStream, jsonTree);
+
+    received_t msg;
+    msg.func_id = jsonTree.get<std::string>("operation"); 
+    /*  EXPECTED RESPONSE
+     _______________
+    |  Scalar --> 0 |
+    |  Vector --> 1 |
+    |  Matrix --> 2 |
+    |_______________|
+    */
+    /* msg.exp_resp = jsonTree.get<std::string>("exp_resp");   */
+    msg.data = jsonTree.get<std::string>("data");
     
-        received_t msg;
-        msg.func_id = jsonTree.get<std::string>("operation"); 
-        /*  EXPECTED RESPONSE
-         _______________
-        |  Scalar --> 0 |
-        |  Vector --> 1 |
-        |  Matrix --> 2 |
-        |_______________|
-        */
-        msg.exp_resp = jsonTree.get<std::string>("exp_resp");  
-        msg.data = jsonTree.get<std::string>("data");
+    uint32_t id = std::stoi(msg.func_id); /* convert from string to uint32_t */
+    std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<matrix>> data = Capstone::parse_data(msg); /* data tuple */
+/*     uint32_t exp_resp = std::stoul(msg.exp_resp);
+ */    Capstone::map_func(id, data, &result);
         
-        int id = std::stoi(msg.func_id); /* convert from string to int */
-        std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<matrix>> data = Capstone::parse_data(msg); /* data tuple */
-        int exp_resp = std::stoi(msg.exp_resp);
-
-        switch (exp_resp) {
-            case 0:{
-                Scalar res_scalar(Capstone::mapIdToFunction(id, data));
-                result.succeeded = true;
-                result.client_response = std::to_string(res_scalar);
-                break;
-            }
-            case 1:{
-                Vector res_vector(Capstone::mapIdToFunction(id, data));
-                result.succeeded = true;
-                result.client_response = Capstone::serialize_vector(res_vector.values);
-                break;
-            }
-            case 2:{
-                Matrix res_matrix(Capstone::mapIdToFunction(id, data));
-                result.succeeded = true;
-                result.client_response = Capstone::serialize_matrix(res_matrix.values);
-                break;
-            }
-            default:{
-                result.succeeded = false;
-                result.client_response = "Error in mapping backend function for case " + std::to_string(exp_resp) + "\n";
-                break;
-            }
-        }
     return result;
 }
 
@@ -87,6 +63,7 @@ result_t Capstone::parse_request(std::string receivedData, std::size_t bytes) {
  * @return std::string 
  */
 std::string Capstone::extract_json(std::string receivedData) {
+    std::cout << " extract_json called\n" << std::endl;
     size_t startPos = receivedData.find('{');
     
     if (startPos != std::string::npos) { 
@@ -108,6 +85,7 @@ std::string Capstone::extract_json(std::string receivedData) {
 }
 
 std::vector<double> Capstone::extract_vector(std::string vec_str){
+    std::cout << " extract vector called\n" << std::endl;
     size_t pos = 0;
     std::vector<double> result;
     while((pos = vec_str.find(',')) != std::string::npos){
@@ -119,6 +97,7 @@ std::vector<double> Capstone::extract_vector(std::string vec_str){
 }
 
 matrix Capstone::extract_matrix(std::string mat_str){
+    std::cout << " extract matrix called\n" << std::endl;
     size_t newline = mat_str.find('\n');
     std::string dim = mat_str.substr(0, newline);
     std::string data = mat_str.substr(newline + 1, mat_str.length() - 1);
@@ -129,7 +108,7 @@ matrix Capstone::extract_matrix(std::string mat_str){
     dim.erase(0, curr + 1);
     int num_cols = std::stoi(dim);
 
-    vector<double> data_vec;
+    std::vector<double> data_vec;
 
     while((curr = data.find(',')) != std::string::npos){
         data_vec.push_back(std::stod(data.substr(0, curr + 1)));
@@ -149,6 +128,7 @@ matrix Capstone::extract_matrix(std::string mat_str){
 
 
 std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<matrix>> Capstone::parse_data(received_t msg) {
+    std::cout << " parse_data called\n" << std::endl;
     size_t d_pos = 0;
     std::string data = msg.data;
 
@@ -171,6 +151,7 @@ std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<mat
 }
 
 std::string Capstone::serialize_matrix(matrix mat){
+    std::cout << " serialize_matrix called\n" << std::endl;
     std::string result = "";
     int num_rows = mat.size();
     int num_cols = mat[0].size();
@@ -188,52 +169,41 @@ std::string Capstone::serialize_matrix(matrix mat){
 }
 
 std::string Capstone::serialize_vector(std::vector<double> vec){
+    std::cout << " serialize_vector called\n" << std::endl;
     std::string result = "";
-    for(int i = 0; i < vec.size(); i ++){
+    for(int i = 0; i < (int) vec.size(); i ++){
         result += std::to_string(vec[i]);
-        if(i != vec.size() - 1){ /* only add comma if not the end */
+        if(i != (int) vec.size() - 1){ /* only add comma if not the end */
             result += ", ";
         }
     }
     return result;
 }
 
+void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<matrix>> data, result_t *resp){
+    std::cout << "map_func called\n" << std::endl;
+    switch(id){
+        case 0x10:{ 
+            std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
+            matrix m1 = mat_list[0];
+            matrix m2 = mat_list[1];
+            matrix sum = sum_matrix(m1, m2);
+            std::string result = Capstone::serialize_matrix(sum);
+            resp->client_response = result; /* attach the sum to the result struct in other scope */
+            break;
+        }
+        case 0x11:{ /* multiply */
 
-/**
-    * @brief Match the function ID given in the JSON to one of the matrix functions
-    * 
-    * @param funcID 
-    */
+            break;
+        }
+        case 0x12:{ /* transpose */
 
-   Result Capstone::mapIdToFunction(int id, std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<matrix>> data) {
-       switch (id) {
-            case 0x10:{
-                std::cout << "Adding two matrices\n" << std::endl;
-                std::vector<matrix> m_list = std::get<2>(data);
-                matrix m1 = m_list[0];
-                matrix m2 = m_list[1];
-                return Matrix(sum_matrix(m1, m2));
-            }
-            case 0x11:{ 
-                std::cout << "";
-                break;
-            }
-            case 0x12:{
-                break;
-            }
-            case 0x13:{
-                break;
-            }
-            case 0x14:{ 
-                break;
-            }
-            case 0x15:{
-                break;
-            }
-            default:{ 
-                break;
-            }
-       }
-       return Result;
-    }   
+            break;
+        }
+        default:
+            resp->client_response = "Error generating function mapping\n";
+            break;
+    }
+}
+
 

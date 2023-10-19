@@ -20,7 +20,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
-inline const std::string MAGIC_NUMBER = "XXXX";
+inline const std::string MAGIC_NUMBER = "XXXXXXXX";
 
 typedef struct result_t {
     bool succeeded;
@@ -34,29 +34,6 @@ typedef struct received_t {
 }received_t;
 
 typedef std::vector<std::vector<double>> matrix;
-
-class Result{
-    public: 
-        virtual ~Result() {}
-};
-
-class Scalar : public Result {
-public:
-    double value;
-    Scalar(double v) : value(v) {}
-};
-
-class Vector : public Result {
-public:
-    std::vector<double> values;
-    Vector(const std::vector<double>& v) : values(v) {}
-};
-
-class Matrix : public Result {
-public:
-    matrix values;
-    Matrix(const matrix& v) : values(v) {}
-};
 
 namespace Capstone {
 
@@ -74,7 +51,7 @@ namespace Capstone {
 
     std::string serialize_vector(std::vector<double> vec);
 
-    Result mapIdToFunction(int id, std::tuple<std::vector<double>, std::vector<std::vector<double>>, std::vector<matrix>> data);
+    void map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<matrix>> data, result_t *resp);
 }
 
 #endif
