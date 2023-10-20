@@ -88,9 +88,11 @@ std::vector<double> Capstone::extract_vector(std::string vec_str){
     std::cout << " extract vector called\n" << std::endl;
     std::cout << "Vector string: " + vec_str << std::endl;
     std::vector<double> result;
+    result.reserve(vec_str.length() / 2);
     std::istringstream ss(vec_str);
     std::string token;
     while (std::getline(ss, token, ',')) {
+        std::cout << "Token: " + token << std::endl;
         double num = std::stod(token);
         result.push_back(num);
     }
