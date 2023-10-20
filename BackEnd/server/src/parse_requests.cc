@@ -190,6 +190,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
             matrix m2 = mat_list[1];
             matrix sum = sum_matrix(m1, m2);
             std::string result = Capstone::serialize_matrix(sum);
+            std::cout << "Result: " << result << std::endl;
             resp->client_response = result; /* attach the sum to the result struct in other scope */
             break;
         }
