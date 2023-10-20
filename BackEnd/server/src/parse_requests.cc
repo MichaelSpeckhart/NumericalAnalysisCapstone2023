@@ -51,7 +51,6 @@ result_t Capstone::parse_request(std::string receivedData, std::size_t bytes) {
     std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<matrix>> data = Capstone::parse_data(msg); /* data tuple */
     /* uint32_t exp_resp = std::stoul(msg.exp_resp); */
     Capstone::map_func(id, data, &result);
-        
     return result;
 }
 
@@ -167,6 +166,7 @@ std::string Capstone::serialize_matrix(matrix mat){
         }
     }
     return result + '\n'; /* add newline to the end */
+    std::cout << "Result: " << result << std::endl;
 }
 
 std::string Capstone::serialize_vector(std::vector<double> vec){
