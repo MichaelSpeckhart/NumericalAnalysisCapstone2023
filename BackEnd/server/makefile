@@ -1,6 +1,6 @@
 # This defaults bits to 64, but allows it to be overridden on the command
 # line
-BITS = 64
+BITS = 32
 
 # Output directory
 ODIR  = build
