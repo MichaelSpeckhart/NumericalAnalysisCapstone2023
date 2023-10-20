@@ -86,7 +86,6 @@ std::string Capstone::extract_json(std::string receivedData) {
 
 std::vector<double> Capstone::extract_vector(std::string vec_str){
     std::cout << " extract vector called\n" << std::endl;
-    std::cout << "Vector string: " << vec_str << std::endl;
     std::vector<double> result;
     result.reserve(vec_str.length() / 2);
     std::istringstream ss(vec_str);
@@ -101,7 +100,6 @@ std::vector<double> Capstone::extract_vector(std::string vec_str){
 
 matrix Capstone::extract_matrix(std::string mat_str){
     std::cout << " extract matrix called\n" << std::endl;
-    std::cout << "PASS: " + mat_str << std::endl;
     size_t newline = mat_str.find('\n');
     /* extract dimensions without newline */
     std::string dim = mat_str.substr(0, newline - 1); 
@@ -114,11 +112,7 @@ matrix Capstone::extract_matrix(std::string mat_str){
     num_rows = (int) dim_vec[0];
     num_cols = (int) dim_vec[1];
 
-    std::cout << "num_rows: " << num_rows << std::endl;
-    std::cout << "num_cols: " << num_cols << std::endl;
-
     std::vector<double> data_vec = Capstone::extract_vector(data);
-    std::cout << "IM WORKING" << std::endl;
 
     matrix result(num_rows, std::vector<double>(num_cols));
 
