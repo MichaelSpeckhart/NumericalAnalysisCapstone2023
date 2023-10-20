@@ -7,9 +7,9 @@ ODIR  = build
 tmp  := $(shell mkdir -p $(ODIR))
 
 # Basic compiler configuration and flags
-CXX      = g++
+CXX      = arm-linux-gnueabihf-g++
 CXXFLAGS = -MMD -O3 -Wall -shared -std=c++17 -fopenmp -fPIC -g
-LDFLAGS	 = -lpthread -lrt -lcrypt -ldl -lutil -lm -lm 
+LDFLAGS	 = -lpthread -lrt -ldl -lutil -lm
 
 # The basenames of the c++ files that this program uses
 CXXFILES = http_server parse_requests server_main
