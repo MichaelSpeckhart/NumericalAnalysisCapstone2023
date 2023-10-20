@@ -119,8 +119,10 @@ matrix Capstone::extract_matrix(std::string mat_str){
     }
     std::cout << "num_rows: " << num_rows << std::endl;
     std::cout << "num_cols: " << num_cols << std::endl;
-    
+
     std::vector<double> data_vec = Capstone::extract_vector(data);
+    std::cout << "IM WORKING" << std::endl;
+    
     matrix result(num_rows, std::vector<double>(num_cols));
 
     for(int row = 0; row < num_rows; row++){
