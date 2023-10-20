@@ -86,6 +86,7 @@ std::string Capstone::extract_json(std::string receivedData) {
 
 std::vector<double> Capstone::extract_vector(std::string vec_str){
     std::cout << " extract vector called\n" << std::endl;
+    std::cout << "Vector string: " + vec_str << std::endl;
     std::vector<double> result;
     std::istringstream ss(vec_str);
     std::string token;
