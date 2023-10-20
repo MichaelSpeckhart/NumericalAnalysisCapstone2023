@@ -105,7 +105,7 @@ matrix Capstone::extract_matrix(std::string mat_str){
     /* extract dimensions without newline */
     std::string dim = mat_str.substr(0, newline); 
     /* extract matrix data without the newline */
-    std::string data = mat_str.substr(newline + 1, mat_str.length() - (newline + 2));
+    std::string data = mat_str.substr(newline + 1, mat_str.length() - (newline + 1));
 
     int num_rows, num_cols = 0;
     /* spliting the dimensions of variable length */
