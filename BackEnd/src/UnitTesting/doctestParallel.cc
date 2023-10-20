@@ -35,6 +35,15 @@ void CHECKCSRFast(CSRMatrix<double> one, CSRMatrix<double> two){
     }
 }
 
+void CHECK_VECTOR_EQ(vector<double> &mResult, vector<double> &mCheck, double tol)
+{
+    CHECK(mResult.size() == mCheck.size());
+    for (size_t i = 0; i < mResult.size(); i++)
+    {
+        CHECK_MESSAGE(abs(mResult[i] - mCheck[i]) < tol, "i = " << i);
+    }
+}
+
 // TEST_CASE("CSR ADD parallel Correctness") {
 
 //     CSRMatrix<double> m1 = load_fileCSR<double>("../../../data/matrices/1138_bus.mtx");
@@ -109,5 +118,18 @@ TEST_CASE("CSR multiply parallel Correctness") {
     // for(size_t i = 0 ; i <m3.val.size();i++){
     //     CHECK(m3.val[i] == m4.val[i]);
     // }
+}
+
+TEST_CASE("Jacobi Iteration Parallel")
+{
+    const std::vector<std::vector<double>> A = {{4.0, 1.0, 1.0}, {1.0, 4.0, 1.0}, {1.0, 1.0, 4.0}};
+    const std::vector<double> b = {6.0, 6.0, 6.0};
+    const double tol = 1e-6;
+    const int max_iter = 100;
+
+    std::vector<double> x_expected = {1.0, 1.0, 1.0};
+    std::vector<double> x = parallel::jacobi_method_parallel(A, b, max_iter);
+
+    CHECK_VECTOR_EQ(x, x_expected, tol);
 }
 
