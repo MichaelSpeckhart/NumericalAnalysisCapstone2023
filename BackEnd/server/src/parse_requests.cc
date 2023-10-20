@@ -108,21 +108,18 @@ matrix Capstone::extract_matrix(std::string mat_str){
     /* extract matrix data without the newline */
     std::string data = mat_str.substr(newline + 1, mat_str.length() - (newline + 2));
 
-    std::istringstream ss(dim);
-    int num_rows, num_cols;
+    int num_rows, num_cols = 0;
     /* spliting the dimensions of variable length */
-    if(std::getline(ss, dim, ',')){
-        num_rows = std::stoi(dim);
-    }
-    if (std::getline(ss, dim)) {
-        num_cols = std::stoi(dim);
-    }
+    std::vector<double> dim_vec = Capstone::extract_vector(dim);
+    num_rows = (int) dim_vec[0];
+    num_cols = (int) dim_vec[1];
+
     std::cout << "num_rows: " << num_rows << std::endl;
     std::cout << "num_cols: " << num_cols << std::endl;
 
     std::vector<double> data_vec = Capstone::extract_vector(data);
     std::cout << "IM WORKING" << std::endl;
-    
+
     matrix result(num_rows, std::vector<double>(num_cols));
 
     for(int row = 0; row < num_rows; row++){
