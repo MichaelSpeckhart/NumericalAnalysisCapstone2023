@@ -22,6 +22,7 @@
 #include <vector>
 #include <cmath>
 #include <stdexcept>
+#include <tuple>
 
 using namespace std;
 
@@ -114,7 +115,7 @@ vector<vector<double>> identity_matrix(size_t size)
 {
     vector<vector<double>> matrix(size, vector<double>(size, 0));
 #pragma omp parallel
-    for (int i = 0; i < size; ++i)
+    for (size_t i = 0; i < size; ++i)
         matrix[i][i] = 1;
     return matrix;
 }
@@ -139,7 +140,7 @@ vector<vector<double>> sum_matrix(vector<vector<double>> m1,
 #pragma omp parallel
     for (size_t i = 0; i < d1; ++i)
         for (size_t j = 0; j < d2; ++j)
-            m1[i][j] -= m2[i][j];
+            m1[i][j] += m2[i][j];
 
     return m1;
 }
@@ -511,25 +512,25 @@ pair<vector<vector<double>>, vector<vector<double>>> qr_factorization(vector<vec
 // Return the permutation matrix as a vector of indices
 std::vector<int> lu_factorization_inplace(std::vector<std::vector<double>> &A)
 {
-    const int n = A.size();
+    const size_t n = A.size();
     std::vector<int> p(n);
     if (n != A[0].size())
     {
         throw invalid_argument("Error: Matrix must be square nxn");
     }
     // Initialize the permutation matrix to the identity matrix
-    for (int i = 0; i < n; i++)
+    for (size_t i = 0; i < n; i++)
     {
         p[i] = i;
     }
 
     // Perform LU factorization with partial pivoting
-    for (int k = 0; k < n - 1; k++)
+    for (size_t k = 0; k < n - 1; k++)
     {
         // Find pivot row and swap
-        int pivot_row = k;
+        size_t pivot_row = k;
         double pivot_val = std::abs(A[k][k]);
-        for (int i = k + 1; i < n; i++)
+        for (size_t i = k + 1; i < n; i++)
         {
             double val = std::abs(A[i][k]);
             if (val > pivot_val)
@@ -549,11 +550,11 @@ std::vector<int> lu_factorization_inplace(std::vector<std::vector<double>> &A)
         }
 
         // Eliminate entries below the pivot
-        for (int i = k + 1; i < n; i++)
+        for (size_t i = k + 1; i < n; i++)
         {
             double factor = A[i][k] / A[k][k];
             A[i][k] = factor;
-            for (int j = k + 1; j < n; j++)
+            for (size_t j = k + 1; j < n; j++)
             {
                 A[i][j] -= factor * A[k][j];
             }
@@ -568,17 +569,17 @@ tuple<vector<vector<double>>, vector<vector<double>>, vector<vector<double>>> lu
     vector<vector<double>> L(A.size(), vector<double>(A.size(), 0.0));
     vector<vector<double>> U(A.size(), vector<double>(A.size(), 0.0));
     vector<vector<double>> P(A.size(), vector<double>(A.size(), 0.0));
-    for (int i = 0; i < A.size(); i++)
+    for (size_t i = 0; i < A.size(); i++)
     {
-        for (int j = 0; j < A.size(); j++)
+        for (size_t j = 0; j < A.size(); j++)
         {
             L[i][j] = A[i][j];
         }
     }
     vector<int> p = lu_factorization_inplace(L);
-    for (int i = 0; i < A.size(); i++)
+    for (size_t i = 0; i < A.size(); i++)
     {
-        for (int j = 0; j < A.size(); j++)
+        for (size_t j = 0; j < A.size(); j++)
         {
             if (i == j)
             {
@@ -596,11 +597,11 @@ tuple<vector<vector<double>>, vector<vector<double>>, vector<vector<double>>> lu
             }
         }
     }
-    for (int i = 0; i < A.size(); i++)
+    for (size_t i = 0; i < A.size(); i++)
     {
         P[i][p[i]] = 1;
     }
-    return make_tuple(P, L, U);
+    return std::make_tuple(P, L, U);
 }
 
 // Perfome Cholesky factorization on the input matrix A
@@ -608,17 +609,17 @@ tuple<vector<vector<double>>, vector<vector<double>>, vector<vector<double>>> lu
 
 vector<vector<double>> cholesky_factorization(std::vector<std::vector<double>> &A)
 {
-    const int n = A.size();
+    const size_t n = A.size();
     vector<vector<double>> L(n, vector<double>(n, 0.0));
     if (n != A[0].size())
     {
         throw invalid_argument("Error: Matrix must be square nxn");
     }
     // Perform Cholesky factorization
-    for (int j = 0; j < n; j++)
+    for (size_t j = 0; j < n; j++)
     {
         double sum = 0.0;
-        for (int k = 0; k < j; k++)
+        for (size_t k = 0; k < j; k++)
         {
             sum += L[j][k] * L[j][k];
         }
@@ -628,10 +629,10 @@ vector<vector<double>> cholesky_factorization(std::vector<std::vector<double>> &
             throw invalid_argument("Error: Matrix is not positive definite");
         }
         L[j][j] = sqrt(d);
-        for (int i = j + 1; i < n; i++)
+        for (size_t i = j + 1; i < n; i++)
         {
             double sum = 0.0;
-            for (int k = 0; k < j; k++)
+            for (size_t k = 0; k < j; k++)
             {
                 sum += L[i][k] * L[j][k];
             }
