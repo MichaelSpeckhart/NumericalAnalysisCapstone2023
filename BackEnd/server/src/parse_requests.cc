@@ -119,7 +119,7 @@ matrix Capstone::extract_matrix(std::string mat_str){
 
     for(int row = 0; row < num_rows; row++){
         for(int col = 0; col < num_cols; col++){
-            result[row][col] = data_vec[row * num_cols + col];
+            result[row][col] = (int) data_vec[row * num_cols + col];
         }
     }
     return result;
