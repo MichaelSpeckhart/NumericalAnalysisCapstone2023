@@ -77,6 +77,7 @@ namespace Capstone {
                     returnTree.put("exp_res", 0);
                     if(result.succeeded == true){
                         writeData = result.client_response;
+                        std::cout << "Client Response: " << writeData << std::endl;
                         returnTree.put("data", writeData);
 
                     }else{
