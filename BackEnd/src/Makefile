@@ -5,6 +5,7 @@ SRC = functions.cc functionsCSC.cc functionsCSR.cc functionsCOO.cc
 OBJ = $(SRC:.cc=.o)
 TARGET = ../../build/library.so
 DEST = ../../build/
+SERVER_DST = ../server/
 
 all: $(TARGET)
 
@@ -12,6 +13,7 @@ $(TARGET): $(OBJ)
 	@echo 'Linking...'
 	@echo $(OBJ) '-->' $(TARGET)
 	@$(CXX) $(CXXFLAGS) -o $(TARGET) $(addprefix $(DEST), $(OBJ)) $(LIBS)
+	@cp $(TARGET) $(SERVER_DST)
 
 %.o: %.cc
 	@echo $< '-->' $@

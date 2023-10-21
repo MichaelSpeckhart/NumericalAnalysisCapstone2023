@@ -9,7 +9,7 @@ tmp  := $(shell mkdir -p $(ODIR))
 # Basic compiler configuration and flags
 CXX      = arm-linux-gnueabihf-g++ -march=armv7-a -mthumb -mthumb-interwork -mfloat-abi=hard -mfpu=neon-vfpv4 -mtls-dialect=gnu  -march=armv7-a  -mthumb -mfloat-abi=hard -mfpu=neon -mvectorize-with-neon-quad 
 CXXFLAGS = -MMD -O3 -Wall -std=c++17 -g
-LDFLAGS	 = -L../../build/ -l:library.so -lpthread -lrt -ldl -lutil -lm 
+LDFLAGS	 = -L. -l:library.so -lpthread -lrt -ldl -lutil -lm 
 
 # The basenames of the c++ files that this program uses
 CXXFILES = http_server parse_requests server_main
