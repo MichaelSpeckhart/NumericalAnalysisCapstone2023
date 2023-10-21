@@ -142,6 +142,9 @@ vector<vector<double>> sum_matrix(vector<vector<double>> m1,
         for (size_t j = 0; j < d2; ++j)
             m1[i][j] += m2[i][j];
 
+    for (size_t i = 0; i < d1; ++i)
+        for (size_t j = 0; j < d2; ++j)
+           cout << std::to_string(m1[i][j]) << endl;
     return m1;
 }
 
