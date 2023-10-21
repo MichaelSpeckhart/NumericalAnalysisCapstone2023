@@ -136,8 +136,7 @@ vector<vector<double>> sum_matrix(vector<vector<double>> m1,
     // for the GUI to handle
     if (d1 != static_cast<size_t>(m2.size()) || d2 != static_cast<size_t>(m2[0].size()))
         return d_err;
-
-#pragma omp parallel
+        
     for (size_t i = 0; i < d1; ++i)
         for (size_t j = 0; j < d2; ++j)
             m1[i][j] += m2[i][j];
