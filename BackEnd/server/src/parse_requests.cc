@@ -157,13 +157,13 @@ std::string Capstone::serialize_matrix(matrix mat){
     std::string result = "";
     int num_rows = mat.size();
     int num_cols = mat[0].size();
-    result += std::to_string(num_rows) + ", " + std::to_string(num_cols) + '\n';
+    result += std::to_string(num_rows) + "," + std::to_string(num_cols) + '\n';
     /* converting the matrix type to a string */
     for(int row = 0; row < (int) num_rows; row++){
         for(int col = 0; col < (int) num_cols; col++){
             result += std::to_string(mat[row][col]);
             if(row != num_rows - 1 || col != num_cols - 1){ /* only add comma if not the end */
-                result += ", ";
+                result += ",";
             }
         }
     }
@@ -177,7 +177,7 @@ std::string Capstone::serialize_vector(std::vector<double> vec){
     for(int i = 0; i < (int) vec.size(); i ++){
         result += std::to_string(vec[i]);
         if(i != (int) vec.size() - 1){ /* only add comma if not the end */
-            result += ", ";
+            result += ",";
         }
     }
     return result;
