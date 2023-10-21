@@ -51,7 +51,6 @@ result_t Capstone::parse_request(std::string receivedData, std::size_t bytes) {
     std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<matrix>> data = Capstone::parse_data(msg); /* data tuple */
     /* uint32_t exp_resp = std::stoul(msg.exp_resp); */
     Capstone::map_func(id, data, &result);
-    std::cout << "Client Response: " << result.client_response << std::endl;
     return result;
 }
 
@@ -196,6 +195,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
             matrix sum = sum_matrix(m1, m2);
             std::string result = Capstone::serialize_matrix(sum);
             resp->client_response = result; /* attach the sum to the result struct in other scope */
+            resp->succeeded = true; /* TODO: add a checking mechanism */
             break;
         }
         case 0x11:{ /* multiply */
