@@ -167,7 +167,7 @@ std::string Capstone::serialize_matrix(matrix mat){
             }
         }
     }
-    return result + '\n'; /* add newline to the end */
+    return result; /* add newline to the end */
     std::cout << "Result: " << result << std::endl;
 }
 
