@@ -1,7 +1,7 @@
 #include <typeinfo>
 
 #include "parse_requests.h"
-#include "../test/test_functions.h"
+#include "function_map.h"
 
 const std::string EMPTY = "";
 const size_t MAX_SIZE = 1024;

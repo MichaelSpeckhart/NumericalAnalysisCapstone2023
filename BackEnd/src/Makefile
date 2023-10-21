@@ -1,4 +1,4 @@
-CXX = g++
+CXX = arm-linux-gnueabihf-g++ -march=armv7-a -mthumb -mthumb-interwork -mfloat-abi=hard -mfpu=neon-vfpv4 -mtls-dialect=gnu  -march=armv7-a  -mthumb -mfloat-abi=hard -mfpu=neon -mvectorize-with-neon-quad 
 CXXFLAGS = -O3 -Wall -shared -Werror -fopenmp -std=c++17 -fPIC
 LIBS = -lgomp
 SRC = functions.cc functionsCSC.cc functionsCSR.cc functionsCOO.cc
