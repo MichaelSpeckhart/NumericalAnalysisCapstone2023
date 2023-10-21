@@ -190,6 +190,8 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
             std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
             matrix m1 = mat_list[0];
             matrix m2 = mat_list[1];
+            std::cout << "Matrix 1: " << Capstone::serialize_matrix(m1) << std::endl;
+            std::cout << "Matrix 2: " << Capstone::serialize_matrix(m2) << std::endl;
             matrix sum = sum_matrix(m1, m2);
             std::string result = Capstone::serialize_matrix(sum);
             std::cout << "Result: " << result << std::endl;
