@@ -119,7 +119,7 @@ matrix Capstone::extract_matrix(std::string mat_str){
 
     for(int row = 0; row < num_rows; row++){
         for(int col = 0; col < num_cols; col++){
-            result[row][col] = (int) data_vec[row * num_cols + col];
+            result[row][col] = data_vec[row * num_cols + col];
         }
     }
     return result;
@@ -161,14 +161,13 @@ std::string Capstone::serialize_matrix(matrix mat){
     /* converting the matrix type to a string */
     for(int row = 0; row < (int) num_rows; row++){
         for(int col = 0; col < (int) num_cols; col++){
-            result += std::to_string(mat[row][col]);
+            result += std::to_string((int) mat[row][col]);
             if(row != num_rows - 1 || col != num_cols - 1){ /* only add comma if not the end */
                 result += ",";
             }
         }
     }
     return result; /* add newline to the end */
-    std::cout << "Result: " << result << std::endl;
 }
 
 std::string Capstone::serialize_vector(std::vector<double> vec){
