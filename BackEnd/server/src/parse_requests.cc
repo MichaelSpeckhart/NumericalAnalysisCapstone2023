@@ -164,6 +164,7 @@ std::string Capstone::serialize_matrix(matrix mat){
         for(int col = 0; col < (int) num_cols; col++){
             token << std::fixed << std::setprecision(2) << mat[row][col];
             result += token.str();
+            token.str(std::string()); /* clear the stringstream */
             if(row != num_rows - 1 || col != num_cols - 1){ /* only add comma if not the end */
                 result += ",";
             }
