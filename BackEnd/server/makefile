@@ -1,15 +1,15 @@
 # This defaults bits to 64, but allows it to be overridden on the command
 # line
-BITS = 64
+BITS = 32
 
 # Output directory
 ODIR  = build
 tmp  := $(shell mkdir -p $(ODIR))
 
 # Basic compiler configuration and flags
-CXX      = g++
-CXXFLAGS = -MMD -O3 -Wall -shared -std=c++17 -fopenmp -fPIC 
-LDFLAGS	 = -m$(BITS) -lpthread -lrt -lcrypt -ldl -lutil -lm -lm 
+CXX      = arm-linux-gnueabihf-g++ -march=armv7-a -mthumb -mthumb-interwork -mfloat-abi=hard -mfpu=neon-vfpv4 -mtls-dialect=gnu  -march=armv7-a  -mthumb -mfloat-abi=hard -mfpu=neon -mvectorize-with-neon-quad 
+CXXFLAGS = -MMD -O3 -Wall -std=c++17 -g
+LDFLAGS	 = -L. -l:library.so -lpthread -lrt -ldl -lutil -lm
 
 # The basenames of the c++ files that this program uses
 CXXFILES = http_server parse_requests server_main
@@ -40,7 +40,7 @@ $(ODIR)/%.o: src/%.cc
 # Link rule for building the target from .o files
 $(TARGET): $(OFILES)
 	@echo [LD] $^ "-->" $@
-	@$(CXX) -o $@ $^ $(LDFLAGS)
+	@$(CXX) -o $@ $^ $(LDFLAGS) 
 
 # Remember that 'all' and 'clean' aren't real targets
 .PHONY: all clean

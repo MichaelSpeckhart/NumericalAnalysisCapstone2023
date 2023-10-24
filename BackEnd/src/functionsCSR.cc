@@ -487,7 +487,7 @@ bool diagonally_dominant(CSRMatrix<T> m1) {
  * @param iterations 
  */
 template <typename T>
-std::vector<T> jacobi_method(CSRMatrix<T> m1, std::vector<T> B, int maxIterations) {
+std::vector<T> jacobi_method_CSR(CSRMatrix<T> m1, std::vector<T> B, int maxIterations) {
     if (diagonally_dominant(m1) == false) {
         throw std::invalid_argument("Input matrix is not diagonally dominant");
     }
