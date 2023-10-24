@@ -155,13 +155,15 @@ std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<mat
 std::string Capstone::serialize_matrix(matrix mat){
     std::cout << " serialize_matrix called\n" << std::endl;
     std::string result = "";
+    std::stringstream token;
     int num_rows = mat.size();
     int num_cols = mat[0].size();
     result += std::to_string(num_rows) + "," + std::to_string(num_cols) + '\n';
     /* converting the matrix type to a string */
     for(int row = 0; row < (int) num_rows; row++){
         for(int col = 0; col < (int) num_cols; col++){
-            result += std::to_string((int) mat[row][col]);
+            token << std::fixed << std::setprecision(2) << mat[row][col];
+            result += token.str();
             if(row != num_rows - 1 || col != num_cols - 1){ /* only add comma if not the end */
                 result += ",";
             }
@@ -198,7 +200,11 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
             break;
         }
         case 0x11:{ /* multiply */
-
+            std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
+            std::vector<double> scalars = std::get<0>(data); /* access the list of scalars from tuple */
+            matrix m1 = mat_list[0];
+            double s1 = scalars[0];
+            
             break;
         }
         case 0x12:{ /* transpose */
