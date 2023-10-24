@@ -162,7 +162,7 @@ std::string Capstone::serialize_matrix(matrix mat){
     /* converting the matrix type to a string */
     for(int row = 0; row < (int) num_rows; row++){
         for(int col = 0; col < (int) num_cols; col++){
-            token << std::fixed << std::setprecision(1) << mat[row][col];
+            token << std::fixed << std::setprecision(2) << mat[row][col];
             result += token.str();
             if(row != num_rows - 1 || col != num_cols - 1){ /* only add comma if not the end */
                 result += ",";
@@ -204,10 +204,12 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
             std::vector<double> scalars = std::get<0>(data); /* access the list of scalars from tuple */
             matrix m1 = mat_list[0];
             double s1 = scalars[0];
+            std::cout << "Matrix 1: " << Capstone::serialize_matrix(m1) << std::endl;
+            std::cout << "Scalar 1: " << s1 << std::endl;
             matrix mat = scalar_multiply(m1, s1);
             std::string result = Capstone::serialize_matrix(mat);
             resp->client_response = result; /* attach the sum to the result struct in other scope */
-            resp->succeeded = true; 
+            resp->succeeded = true; /* TODO: add a checking mechanism */
             break;
         }
         case 0x12:{ /* transpose */
