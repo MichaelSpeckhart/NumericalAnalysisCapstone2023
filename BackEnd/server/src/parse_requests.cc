@@ -204,7 +204,10 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
             std::vector<double> scalars = std::get<0>(data); /* access the list of scalars from tuple */
             matrix m1 = mat_list[0];
             double s1 = scalars[0];
-            
+            matrix mat = scalar_multiply(m1, s1);
+            std::string result = Capstone::serialize_matrix(mat);
+            resp->client_response = result; /* attach the sum to the result struct in other scope */
+            resp->succeeded = true; 
             break;
         }
         case 0x12:{ /* transpose */
