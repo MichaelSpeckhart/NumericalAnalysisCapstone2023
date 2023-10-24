@@ -231,6 +231,26 @@ vector<vector<double>> mult_matrix(const vector<vector<double>> m1,
     return m3;
 }
 
+/// @brief Multiplies a matrix by a scalar value.
+/// @param matrix The matrix to be multiplied.
+/// @param scalar The scalar value.
+/// @return The resulting matrix after scalar multiplication.
+vector<vector<double>> scalar_multiply(const vector<vector<double>> matrix, const double scalar)
+{
+    const int rows = static_cast<int>(matrix.size());
+    const int cols = static_cast<int>(matrix[0].size());
+
+    vector<vector<double>> result(rows, vector<double>(cols, 0.0));
+
+#pragma omp parallel
+    for (int i = 0; i < rows; ++i)
+        for (int j = 0; j < cols; ++j)
+            result[i][j] = matrix[i][j] * scalar;
+
+    return result;
+}
+
+
 /// @brief Scales the matrix upwards by a given constant (i.e. multiply every
 /// value in the matrix).
 /// @param m1 The matrix.
