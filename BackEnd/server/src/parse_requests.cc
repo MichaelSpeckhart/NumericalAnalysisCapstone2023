@@ -162,7 +162,7 @@ std::string Capstone::serialize_matrix(matrix mat){
     /* converting the matrix type to a string */
     for(int row = 0; row < (int) num_rows; row++){
         for(int col = 0; col < (int) num_cols; col++){
-            token << std::fixed << std::setprecision(2) << mat[row][col];
+            token << std::fixed << std::setprecision(1) << mat[row][col];
             result += token.str();
             if(row != num_rows - 1 || col != num_cols - 1){ /* only add comma if not the end */
                 result += ",";
