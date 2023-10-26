@@ -512,9 +512,20 @@ std::vector<T> jacobi_method_CSR(CSRMatrix<T> m1, std::vector<T> B, const double
             }
             //no devide by zero error becuase of diagonally dominant check
             approxValues[i] = (B[i] - sum) / diagonal;
-            xValues = approxValues;
-            iterations++;
+            
         }
+         // Calculate the norm of the difference between x and x_new
+        diff = 0.0;
+        for (size_t i = 0; i < m1.numRows; i++)
+        {
+            double abs_diff = std::abs(approxValues[i] - xValues[i]);
+            if (abs_diff > diff)
+            {
+                diff = abs_diff;
+            }
+        }
+        xValues = approxValues;
+        iterations++;
     
 }
 return approxValues;
