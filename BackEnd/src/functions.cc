@@ -745,7 +745,6 @@ std::vector<double> jacobi_iteration(const std::vector<std::vector<double>> &A,
 
     int iter = 0;
     double diff = tol + 1.0;
-
     while (iter < max_iter && diff > tol)
     {
         // Compute new iterate
@@ -760,6 +759,16 @@ std::vector<double> jacobi_iteration(const std::vector<std::vector<double>> &A,
                 }
             }
             x_new[i] = (b[i] - sum) / A[i][i];
+        }
+        // Calculate the norm of the difference between x and x_new
+        diff = 0.0;
+        for (int i = 0; i < n; i++)
+        {
+            double abs_diff = std::abs(x_new[i] - x[i]);
+            if (abs_diff > diff)
+            {
+                diff = abs_diff;
+            }
         }
         x = x_new;
         iter++;
