@@ -554,7 +554,7 @@ TEST_CASE("Gauss-Seidel")
     CHECK_VECTOR_EQ(x, x_expected, tol);
 }
 
-TEST_CASE("Jacobi Iteration")
+TEST_CASE("Jacobi Iteration 0")
 {
     const std::vector<std::vector<double>> A = {{4.0, 1.0, 1.0}, {1.0, 4.0, 1.0}, {1.0, 1.0, 4.0}};
     const std::vector<double> b = {6.0, 6.0, 6.0};
@@ -567,6 +567,20 @@ TEST_CASE("Jacobi Iteration")
     CHECK_VECTOR_EQ(x, x_expected, tol);
 }
 
+TEST_CASE("Jacobi Iteration 1")
+{
+    const std::vector<std::vector<double>> A = {{3.0, 1.0, 1.0}, {1.0, 5.0, 2.0}, {2.0, 3.0, 6.0}};
+    const std::vector<double> b = {5.0, 10.0, 15.0};
+    const double tol = 1e-6;
+    const int max_iter = 100;
+
+    std::vector<double> x_expected = {1.0, 2.0, 2.0};
+    std::vector<double> x = jacobi_iteration(A, b, tol, max_iter);
+
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+}
+
+
 TEST_CASE("Jacobi Iteration CSR")
 {
     std::vector<std::vector<double>> A = {{4.0, 1.0, 1.0}, {1.0, 4.0, 1.0}, {1.0, 1.0, 4.0}};
@@ -577,6 +591,20 @@ TEST_CASE("Jacobi Iteration CSR")
 
     std::vector<double> x_expected = {1.0, 1.0, 1.0};
     std::vector<double> x = jacobi_method_CSR<double>(CSR_A, b,tol, max_iter);
+
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+}
+
+TEST_CASE("Jacobi Iteration CSR 1")
+{
+    std::vector<std::vector<double>> A = {{3.0, 1.0, 1.0}, {1.0, 5.0, 2.0}, {2.0, 3.0, 6.0}};
+    auto CSR_A = from_vector_CSR<double>(A);
+    const std::vector<double> b = {5.0, 10.0, 15.0};
+    const double tol = 1e-6;
+    const int max_iter = 100;
+
+    std::vector<double> x_expected = {1.0, 2.0, 2.0};
+    std::vector<double> x = jacobi_method_CSR(CSR_A, b, tol, max_iter);
 
     CHECK_VECTOR_EQ(x, x_expected, tol);
 }
