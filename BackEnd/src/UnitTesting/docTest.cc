@@ -576,7 +576,7 @@ TEST_CASE("Jacobi Iteration CSR")
     const int max_iter = 100;
 
     std::vector<double> x_expected = {1.0, 1.0, 1.0};
-    std::vector<double> x = jacobi_method_CSR<double>(CSR_A, b, max_iter);
+    std::vector<double> x = jacobi_method_CSR<double>(CSR_A, b,tol, max_iter);
 
     CHECK_VECTOR_EQ(x, x_expected, tol);
 }

@@ -484,17 +484,19 @@ bool diagonally_dominant(CSRMatrix<T> m1) {
  * 
  * @param denseMatrix 
  * @param B 
- * @param iterations 
+ * @param tol - the tolerance for convergence
+ * @param iterations - the maximum number of iterations to perform
  */
 template <typename T>
-std::vector<T> jacobi_method_CSR(CSRMatrix<T> m1, std::vector<T> B, int maxIterations) {
+std::vector<T> jacobi_method_CSR(CSRMatrix<T> m1, std::vector<T> B, const double tol,int maxIterations) {
     if (diagonally_dominant(m1) == false) {
         throw std::invalid_argument("Input matrix is not diagonally dominant");
     }
     std::vector<T> xValues(B.size(), 0.0);
     std::vector<T> approxValues(B.size(), 0.0);
     int iterations = 0;
-    while (iterations < maxIterations) {
+    double diff = tol + 1.0;
+    while (iterations < maxIterations && diff > tol) {
         for (size_t i = 0; i < m1.numRows; ++i) {
             size_t a1 = m1.row_ptr.at(i);
             size_t b1 = m1.row_ptr.at(i + 1);
