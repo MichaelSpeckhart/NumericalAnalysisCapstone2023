@@ -1005,6 +1005,20 @@ double matrix_determinant_lu(std::vector<std::vector<double>> &A)
  * @param A 
  * @return vector<vector<double>> 
  */
-vector<vector<double>> matrix_inverse(const vector<vector<double>> &A) {
+bool matrix_inverse(std::vector<std::vector<double>> &A, std::vector<std::vector<double>> &result) {
+    std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> qr = qr_factorization(m1);
+    std::vector<std::vector<double>> Q = qr.first;
+    std::vector<std::vector<double>> R = qr.second;
+
+    /* check validity */
+    if(A.size() != A[0].size()){
+        return false; // not a square matrix
+    }
+    if(find_matrix_determinant(A) == 0){
+        return false; // determinant is zero
+    }
+
+    
+    
 
 }

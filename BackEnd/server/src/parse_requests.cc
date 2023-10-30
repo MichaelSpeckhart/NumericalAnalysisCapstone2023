@@ -221,6 +221,11 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
             resp->succeeded = true;
             break;
         }
+        case 0x13:{ /* inverse */
+            std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
+            
+
+        }
         default:
             resp->client_response = "Error generating function mapping\n";
             break;
