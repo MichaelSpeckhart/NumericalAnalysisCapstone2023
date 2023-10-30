@@ -777,13 +777,23 @@ std::vector<double> jacobi_iteration(const std::vector<std::vector<double>> &A,
     return x;
 }
 
-// Solve the linear system Ax = b using SSOR iteration with relaxation parameter omega
-// A is a square matrix of size n x n
-// b is a vector of length n
-// tol is the tolerance for convergence
-// max_iter is the maximum number of iterations to perform
-// omega is the relaxation parameter (0 < omega < 2)
-// Return the solution x as a vector of length n
+
+/**
+ * @brief Solve the linear system Ax = b using SSOR iteration with relaxation parameter omega
+ * A is a square matrix of size n x n
+ * b is a vector of length n
+ * tol is the tolerance for convergence
+ * max_iter is the maximum number of iterations to perform
+ * omega is the relaxation parameter (0 < omega < 2)
+ * Return the solution x as a vector of length n
+ * 
+ * @param A 
+ * @param b 
+ * @param tol 
+ * @param max_iter 
+ * @param omega 
+ * @return std::vector<double> 
+ */
 std::vector<double> ssor_iteration(const std::vector<std::vector<double>> &A,
                                    const std::vector<double> &b,
                                    const double tol,
@@ -845,7 +855,14 @@ std::vector<double> ssor_iteration(const std::vector<std::vector<double>> &A,
     return x;
 }
 
-// Incomplete Cholesky factorization
+
+/**
+ * @brief Incomplete Cholesky Factorization
+ * 
+ * @param A 
+ * @param tol 
+ * @return std::vector<vector<double>> 
+ */
 std::vector<vector<double>> incompleteCholesky(const vector<vector<double>> &A, double tol)
 {
     int n = A.size();
@@ -877,4 +894,117 @@ std::vector<vector<double>> incompleteCholesky(const vector<vector<double>> &A, 
     }
 
     return L;
+}
+
+/**
+ * @brief Finding Matrix determinant, once matrix size gets to over 1000x1000, this will not compute in a fast
+ * enough time, use determinant using LU Decomposition.
+ * 
+ * Time complexity O(n!)
+ * 
+ * @param matrix 
+ * @param numRows 
+ * @param numCols 
+ * @return double 
+ */
+double find_matrix_determinant(std::vector<std::vector<double>> &matrix) {
+    int dimension = matrix.size();
+
+    if (dimension == 1) {
+        return matrix[0][0];
+    }
+
+    double determinant = 0;
+
+    for (int i = 0; i < dimension; ++i) {
+        std::vector<std::vector<double>> subMat;
+        for (int j = 1; j < dimension; ++j) {
+            std::vector<double> row;
+            for (int k = 0; k < dimension; ++k) {
+                if (k != i) {
+                    row.push_back(matrix[j][k]);
+                }
+            }
+            subMat.push_back(row);
+        }
+        determinant += (i % 2 == 0 ? 1 : -1) * matrix[0][i] * find_matrix_determinant(subMat);
+    }
+
+    return determinant;
+}
+
+/**
+ * @brief Matrix determinant using LU decomposition. Using boiler plate LU inplace then finding
+ * det(A) = det(L) * det(U).
+ * 
+ * det(U) and det(L) is the product along the diagonals
+ * 
+ * Time complexity O(n^3)
+ * 
+ * @param A 
+ * @return double 
+ */
+double matrix_determinant_lu(std::vector<std::vector<double>> &A)
+{
+    int n = A.size();
+    vector<vector<double>> L(A.size(), vector<double>(A.size(), 0.0));
+    vector<vector<double>> U(A.size(), vector<double>(A.size(), 0.0));
+    vector<vector<double>> P(A.size(), vector<double>(A.size(), 0.0));
+    double determinant = -1.0;
+    for (size_t i = 0; i < A.size(); i++)
+    {
+        for (size_t j = 0; j < A.size(); j++)
+        {
+            L[i][j] = A[i][j];
+        }
+    }
+    vector<int> p = lu_factorization_inplace(L);
+    for (size_t i = 0; i < A.size(); i++)
+    {
+        for (size_t j = 0; j < A.size(); j++)
+        {
+            if (i == j)
+            {
+                U[i][j] = L[i][j];
+                L[i][j] = 1;
+            }
+            else if (i < j)
+            {
+                U[i][j] = L[i][j];
+                L[i][j] = 0;
+            }
+            else
+            {
+                U[i][j] = 0;
+            }
+        }
+    }
+    for (size_t i = 0; i < A.size(); i++)
+    {
+        P[i][p[i]] = 1;
+    }
+    double u_determinant = 1.0;
+    for (int i = 0; i < n; i++) {
+        u_determinant *= U[i][i];
+    }
+
+    double l_determinant = 1.0;
+    for (int i = 0; i < n; ++i) {
+        l_determinant *= L[i][i];
+    }  
+
+    determinant = determinant * u_determinant * l_determinant;
+
+    return determinant;
+    
+}
+
+/**
+ * @brief Calculate the inverse of a matrix, 
+ * 
+ * @param A 
+ * @return vector<vector<double>> 
+ */
+vector<vector<double>> matrix_inverse(const vector<vector<double>> &A) {
+
 }
