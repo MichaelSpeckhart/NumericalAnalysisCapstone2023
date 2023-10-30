@@ -223,7 +223,26 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
         }
         case 0x13:{ /* inverse */
             std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
-            
+            matrix result;
+            if(matrix_inverse(mat_list[0], result)){
+                std::string result_str = Capstone::serialize_matrix(result);
+                resp->client_response = result_str;
+                resp->succeeded = true;
+            }else{
+                resp->client_response = "Error: Matrix is not invertible\n";
+                resp->succeeded = false;
+            }
+        }
+        case 0x20:{ /* gauss elimination */
+
+        }
+        case 0x21:{ /* lu factorization */
+
+        }
+        case 0x30:{ /* jacobi */
+
+        }
+        case 0x31:{ /* gauss sidel */
 
         }
         default:
