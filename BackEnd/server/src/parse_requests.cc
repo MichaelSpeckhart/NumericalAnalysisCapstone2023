@@ -214,7 +214,11 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
             break;
         }
         case 0x12:{ /* transpose */
-
+            std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
+            matrix result = transpose(mat_list[0]);
+            std::string result_str = Capstone::serialize_matrix(result);
+            resp->client_response = result_str;
+            resp->succeeded = true;
             break;
         }
         default:
