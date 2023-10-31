@@ -999,26 +999,94 @@ double matrix_determinant_lu(std::vector<std::vector<double>> &A)
     
 }
 
+std::vector<std::vector<double>> construct_identity_matrix(int rows, int columns) {
+    std::vector<std::vector<double>> matrix(rows, std::vector<double>(columns, 0.0));
+     for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < columns; j++) {
+            if (i == j) {
+                matrix[i][j] = 1.0; 
+            } else {
+                matrix[i][j] = 0.0; 
+            }
+        }
+    }
+    return matrix;
+}
+
 /**
- * @brief Calculate the inverse of a matrix, 
+ * @brief Matrix inverse using Guass Elimination (Diep) using an augmented version of A
  * 
  * @param A 
- * @return vector<vector<double>> 
+ * @return std::vector<std::vector<double>> 
  */
-bool matrix_inverse(std::vector<std::vector<double>> &A, std::vector<std::vector<double>> &result) {
-    std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> qr = qr_factorization(m1);
-    std::vector<std::vector<double>> Q = qr.first;
-    std::vector<std::vector<double>> R = qr.second;
+std::vector<std::vector<double>> matrix_inverse(std::vector<std::vector<double>> &A) {
+    const size_t n = A.size();
 
-    /* check validity */
-    if(A.size() != A[0].size()){
-        return false; // not a square matrix
+    // Agugment A with the Identity Matrix so that we can do Guass and find the inverse
+    std::vector<std::vector<double>> augmentedA(n, std::vector<double>(2 * n));
+    for (size_t i = 0; i < n; i++) {
+        for (size_t j = 0; j < n; j++) {
+            augmentedA[i][j] = A[i][j];
+            if (i == j) {
+                augmentedA[i][j+n] = 1.0;
+            } else {
+                augmentedA[i][j+n] = 0.0;
+            }
+        }
     }
-    if(find_matrix_determinant(A) == 0){
-        return false; // determinant is zero
+
+    for (size_t i = 0; i < n; i++) {
+        size_t max = i;
+        for (size_t k = i + 1; k < n; k++) {
+            if (abs(augmentedA[k][i]) > abs(augmentedA[max][i])) {
+                max = k;
+            }
+        }
+        std::swap(augmentedA[i], augmentedA[max]);
+        for (size_t k = 0; k < n; k++) {
+            if (k != i) {
+                double factor = augmentedA[k][i] / augmentedA[i][i];
+                for (size_t j = 0; j < 2 * n; j++) {
+                    augmentedA[k][j] -= factor * augmentedA[i][j];
+                }
+            }
+        }
+
+        double pivot = augmentedA[i][i];
+        for (size_t j = 0; j < 2 * n; j++) {
+            augmentedA[i][j] /= pivot;
+        }
     }
 
-    
-    
+    for (size_t i = 0; i < n; i++) {
+        for (size_t j = 0; j < n; j++) {
+            A[i][j] = augmentedA[i][j + n];
+        }
+    }
 
+    return A;
 }
+
+// /**
+//  * @brief Calculate the inverse of a matrix, 
+//  * 
+//  * @param A 
+//  * @return vector<vector<double>> 
+//  */
+// bool matrix_inverse(std::vector<std::vector<double>> &A, std::vector<std::vector<double>> &result) {
+//     std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> qr = qr_factorization(m1);
+//     std::vector<std::vector<double>> Q = qr.first;
+//     std::vector<std::vector<double>> R = qr.second;
+
+//     /* check validity */
+//     if(A.size() != A[0].size()){
+//         return false; // not a square matrix
+//     }
+//     if(find_matrix_determinant(A) == 0){
+//         return false; // determinant is zero
+//     }
+
+    
+    
+
+// }
