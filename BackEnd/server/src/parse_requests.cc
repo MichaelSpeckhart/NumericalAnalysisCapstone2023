@@ -223,7 +223,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
         }
         case 0x13:{ /* inverse */
             std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
-            matrix result;
+            matrix result(mat_list[0].size(), std::vector<double>(mat_list[0].size()));
             if(matrix_inverse(mat_list[0], result)){
                 std::string result_str = Capstone::serialize_matrix(result);
                 resp->client_response = result_str;
@@ -234,16 +234,57 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
             }
         }
         case 0x20:{ /* gauss elimination */
+            std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
+            matrix m1 = mat_list[0];
+            std::vector<std::vector<double>> vec_list = std::get<1>(data); /* grab the vector */
+            std::vector<double> v1 = vec_list[0];
 
+            if(gaussian_elimination(m1, v1)){
+                std::string result_str = serialize_vector(v1);
+                resp->client_response = result_str;
+                resp->succeeded = true;
+            }else{
+                resp->client_response = "Error completing gauzz elimination\n";
+                resp->succeeded = false;
+            }
         }
         case 0x21:{ /* lu factorization */
-
+            std::vector<matrix> mat_list = std::get<2>(data);
+            matrix m1 = mat_list[0];
+            std::vector<int> res = lu_factorization_inplace(m1);
+            std::vector<double> convert(res.begin(), res.end());
+            resp->client_response = serialize_vector(convert);
+            resp->succeeded = true;
         }
         case 0x30:{ /* jacobi */
+            const double TOLERANCE = 1e-6;
+            const int MAX_ITER = 100;
 
+            std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
+            matrix m1 = mat_list[0];
+            std::vector<std::vector<double>> vec_list = std::get<1>(data); /* grab the vector */
+            std::vector<double> v1 = vec_list[0];
+
+            std::vector<double> res = jacobi_iteration(m1, v1, TOLERANCE, MAX_ITER);
+            resp->client_response = serialize_vector(res);
+            resp->succeeded = true;
         }
         case 0x31:{ /* gauss sidel */
+            const int MAX_ITER = 100;
 
+            std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
+            matrix m1 = mat_list[0];
+            std::vector<std::vector<double>> vec_list = std::get<1>(data); /* grab the vector */
+            std::vector<double> v1 = vec_list[0];
+            std::vector<double> x(v1.size(), 0.0);
+
+            if(gauss_seidel(m1, v1, x, MAX_ITER)){
+                resp->client_response = serialize_vector(x);
+                resp->succeeded = true;
+            }else{
+                resp->client_response = "Error completing gauss sidel \n";
+                resp->succeeded = false;
+            }
         }
         default:
             resp->client_response = "Error generating function mapping\n";

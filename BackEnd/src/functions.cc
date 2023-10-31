@@ -1018,7 +1018,6 @@ bool matrix_inverse(std::vector<std::vector<double>> &A, std::vector<std::vector
         return false; // determinant is zero
     }
 
-    
-    
-
+    return false;
+    // TODO: finish this
 }
