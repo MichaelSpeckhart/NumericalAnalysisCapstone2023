@@ -700,3 +700,19 @@ TEST_CASE("Incomplete Cholesky Factorization 4") {
     auto KKt = mult_matrix(K, transpose(K));
     CHECK_MATRIX_EQ(KKt, A, 1e-12);
 }
+
+TEST_CASE("Matrix Inverse 1") {
+    // Create a matrix A
+    vector<vector<double>> A = {{6.0,2.0,3.0}, 
+                                {1.0,1.0,1.0}, 
+                                {0.0,4.0,9.0}};
+
+    // Compute the incomplete Cholesky factorization of A
+    vector<vector<double>> A_inverse = {{0.208333,-0.25,-0.0416667}, 
+                                        {-0.375,  2.25, -0.125}, 
+                                        {0.166667, -1.0, 0.166667}};
+    // PRINT_MATRIX(K);
+    vector<vector<double>> test_inverse = matrix_inverse(A);
+    
+    CHECK_MATRIX_EQ(A_inverse, test_inverse, 1e-6);
+}
