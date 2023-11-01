@@ -233,6 +233,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
                 resp->client_response = "Error: Matrix is not invertible\n";
                 resp->succeeded = false;
             }
+            break;
         }
         case 0x20:{ /* gauss elimination */
             std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
@@ -248,6 +249,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
                 resp->client_response = "Error completing gauzz elimination\n";
                 resp->succeeded = false;
             }
+            break;
         }
         case 0x21:{ /* lu factorization */
             std::vector<matrix> mat_list = std::get<2>(data);
@@ -256,6 +258,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
             std::vector<double> convert(res.begin(), res.end());
             resp->client_response = serialize_vector(convert);
             resp->succeeded = true;
+            break;
         }
         case 0x30:{ /* jacobi */
             const double TOLERANCE = 1e-6;
@@ -269,6 +272,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
             std::vector<double> res = jacobi_iteration(m1, v1, TOLERANCE, MAX_ITER);
             resp->client_response = serialize_vector(res);
             resp->succeeded = true;
+            break;
         }
         case 0x31:{ /* gauss sidel */
             const int MAX_ITER = 100;
@@ -286,6 +290,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
                 resp->client_response = "Error completing gauss sidel \n";
                 resp->succeeded = false;
             }
+            break;
         }
         default:
             resp->client_response = "Error generating function mapping\n";
