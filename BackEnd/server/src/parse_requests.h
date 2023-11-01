@@ -46,13 +46,15 @@ namespace Capstone {
 
     matrix extract_matrix(std::string mat_str);
 
-    std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<matrix>> parse_data(received_t msg);
+    std::tuple<std::vector<double>, std::vector<matrix>> parse_data(received_t msg); 
+
+    std::vector<double> matrix_to_colvector(matrix mat);
 
     std::string serialize_matrix(matrix mat);
 
     std::string serialize_vector(std::vector<double> vec);
 
-    void map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<matrix>> data, result_t *resp);
+    void map_func(uint32_t id, std::tuple<std::vector<double>, std::vector<matrix>> data, result_t *resp);
 }
 
 #endif

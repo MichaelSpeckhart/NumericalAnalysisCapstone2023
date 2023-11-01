@@ -48,7 +48,7 @@ result_t Capstone::parse_request(std::string receivedData, std::size_t bytes) {
     msg.data = jsonTree.get<std::string>("data");
     
     uint32_t id = std::stoi(msg.func_id); /* convert from string to uint32_t */
-    std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<matrix>> data = Capstone::parse_data(msg); /* data tuple */
+    std::tuple<std::vector<double>, std::vector<matrix>> data = Capstone::parse_data(msg); /* data tuple */
     /* uint32_t exp_resp = std::stoul(msg.exp_resp); */
     Capstone::map_func(id, data, &result);
     return result;
@@ -126,7 +126,7 @@ matrix Capstone::extract_matrix(std::string mat_str){
 }
 
 
-std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<matrix>> Capstone::parse_data(received_t msg) {
+std::tuple<std::vector<double>, std::vector<matrix>> Capstone::parse_data(received_t msg) {
     std::cout << " parse_data called\n" << std::endl;
     size_t d_pos = 0;
     std::string data = msg.data;
@@ -135,21 +135,36 @@ std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<mat
     std::vector<std::vector<double>> vectors; 
     std::vector<matrix> matrices;
 
+    /* TODO: modifiy to account for the fact that vectors are treated matrices */
+
     while((d_pos = data.find(MAGIC_NUMBER)) != std::string::npos){
         std::cout << "PASS: " + data << std::endl;
         std::string obj = data.substr(0, d_pos);
         if(obj.length() == 1){ /* it is a scalar */
             scalars.push_back(std::stod(obj));
             data.erase(0, d_pos + MAGIC_NUMBER.length());
-        }else if(obj.find('\n') == std::string::npos){ /* it is a vector */
-            vectors.push_back(Capstone::extract_vector(obj));
-            data.erase(0, d_pos + MAGIC_NUMBER.length());
         }else{ /* it is a matrix */
             matrices.push_back(Capstone::extract_matrix(obj));
             data.erase(0, d_pos + MAGIC_NUMBER.length());
         }
     }
-    return std::make_tuple(scalars, vectors, matrices);
+    return std::make_tuple(scalars, matrices);
+}
+
+/**
+ * Converts a matrix to a column vector.
+ *
+ * @param mat The input matrix.
+ *
+ * @returns A column vector representation of the matrix.
+ */
+std::vector<double> Capstone::matrix_to_colvector(matrix mat){
+    /* assumes matrix is in the right format */
+    std::vector<double> result;
+    for(int row = 0; row < (int) mat.size(); row++){
+        result.push_back(mat[row][0]);
+    }
+    return result;
 }
 
 std::string Capstone::serialize_matrix(matrix mat){
@@ -185,11 +200,11 @@ std::string Capstone::serialize_vector(std::vector<double> vec){
     return result;
 }
 
-void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<std::vector<double>>, std::vector<matrix>> data, result_t *resp){
+void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>, std::vector<matrix>> data, result_t *resp){
     std::cout << "map_func called\n" << std::endl;
     switch(id){
         case 0x10:{ 
-            std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
+            std::vector<matrix> mat_list = std::get<1>(data); /* access the list of matrices from tuple */
             matrix m1 = mat_list[0];
             matrix m2 = mat_list[1];
             std::cout << "Matrix 1: " << Capstone::serialize_matrix(m1) << std::endl;
@@ -201,7 +216,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
             break;
         }
         case 0x11:{ /* multiply */
-            std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
+            std::vector<matrix> mat_list = std::get<1>(data); /* access the list of matrices from tuple */
             std::vector<double> scalars = std::get<0>(data); /* access the list of scalars from tuple */
             matrix m1 = mat_list[0];
             double s1 = scalars[0];
@@ -214,7 +229,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
             break;
         }
         case 0x12:{ /* transpose */
-            std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
+            std::vector<matrix> mat_list = std::get<1>(data); /* access the list of matrices from tuple */
             matrix result = transpose(mat_list[0]);
             std::string result_str = Capstone::serialize_matrix(result);
             resp->client_response = result_str;
@@ -222,7 +237,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
             break;
         }
         case 0x13:{ /* inverse */
-            std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
+            std::vector<matrix> mat_list = std::get<1>(data); /* access the list of matrices from tuple */
             matrix result = mat_list[0];
             if(matrix_inverse(result)){
                 std::string result_str = Capstone::serialize_matrix(result); 
@@ -236,14 +251,10 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
             break;
         }
         case 0x20:{ /* gauss elimination */
-            std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
+            std::vector<matrix> mat_list = std::get<1>(data); /* access the list of matrices from tuple */
             std::cout << "Im working 1" << std::endl;
             matrix m1 = mat_list[0];
-            std::cout << "Im working 2" << std::endl;
-            std::vector<std::vector<double>> vec_list = std::get<1>(data); /* grab the vector */
-            std::cout << "Im working 3" << std::endl;
-            std::vector<double> v1 = vec_list[0];
-            std::cout << "Im working 4" << std::endl;
+            std::vector<double> v1 = matrix_to_colvector(mat_list[1]);;
 
             if(gaussian_elimination(m1, v1)){
                 std::string result_str = Capstone::serialize_vector(v1);
@@ -256,7 +267,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
             break;
         }
         case 0x21:{ /* lu factorization */
-            std::vector<matrix> mat_list = std::get<2>(data);
+            std::vector<matrix> mat_list = std::get<1>(data);
             matrix m1 = mat_list[0];
             std::vector<int> res = lu_factorization_inplace(m1);
             std::vector<double> convert(res.begin(), res.end());
@@ -268,10 +279,10 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
             const double TOLERANCE = 1e-6;
             const int MAX_ITER = 100;
 
-            std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
+            std::vector<matrix> mat_list = std::get<1>(data); /* access the list of matrices from tuple */
             matrix m1 = mat_list[0];
-            std::vector<std::vector<double>> vec_list = std::get<1>(data); /* grab the vector */
-            std::vector<double> v1 = vec_list[0];
+            /* grab the vector */
+            std::vector<double> v1 = matrix_to_colvector(mat_list[1]);
 
             std::vector<double> res = jacobi_iteration(m1, v1, TOLERANCE, MAX_ITER);
             resp->client_response = serialize_vector(res);
@@ -281,10 +292,9 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
         case 0x31:{ /* gauss sidel */
             const int MAX_ITER = 100;
 
-            std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
+            std::vector<matrix> mat_list = std::get<1>(data); /* access the list of matrices from tuple */
             matrix m1 = mat_list[0];
-            std::vector<std::vector<double>> vec_list = std::get<1>(data); /* grab the vector */
-            std::vector<double> v1 = vec_list[0];
+            std::vector<double> v1 = matrix_to_colvector(mat_list[1]);
             std::vector<double> x(v1.size(), 0.0);
 
             if(gauss_seidel(m1, v1, x, MAX_ITER)){
