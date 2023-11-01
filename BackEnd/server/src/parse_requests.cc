@@ -223,9 +223,10 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
         }
         case 0x13:{ /* inverse */
             std::vector<matrix> mat_list = std::get<2>(data); /* access the list of matrices from tuple */
-            matrix result(mat_list[0].size(), std::vector<double>(mat_list[0].size()));
-            if(matrix_inverse(mat_list[0], result)){
-                std::string result_str = Capstone::serialize_matrix(result);
+            matrix result = mat_list[0];
+            if(matrix_inverse(result)){
+                std::string result_str = Capstone::serialize_matrix(result); 
+                std::cout << "Inverse: " << result_str << std::endl;
                 resp->client_response = result_str;
                 resp->succeeded = true;
             }else{
@@ -240,7 +241,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>,std::vector<
             std::vector<double> v1 = vec_list[0];
 
             if(gaussian_elimination(m1, v1)){
-                std::string result_str = serialize_vector(v1);
+                std::string result_str = Capstone::serialize_vector(v1);
                 resp->client_response = result_str;
                 resp->succeeded = true;
             }else{
