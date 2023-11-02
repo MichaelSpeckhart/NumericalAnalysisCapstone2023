@@ -7,3 +7,25 @@ Meeting 9/21
 
 
     { op: "..." arg data: ".....", data: "....." }
+
+
+Values for each function
+Dense Add: 0x10
+Dense Multiply: 0x11
+Dense Transpose: 0x12
+Dense Inverse: 0x13
+// Direct methods for solving (0x20 - 0x2F)
+Dense Gauss Elimination: 0x20
+Dense LU factorization: 0x21
+// Indirect methods for solving (0x30 - 0x3F)
+Dense Jacobi Method: 0x30
+Dense Gauss Siedel: 0x31
+
+//SPARSE
+Sparse Add: 0xA0
+Sparse Multiply: 0xA1
+Sparse Transpose: 0xA2
+Sparse Inverse: 0xA3
+//Sparse Direct methods for solving (0xA0 - 0xAF)
+//Sparse Indirect methods for solving (0xC0 - 0xCF)
+Sparse Jacobi Method: 0xC0
