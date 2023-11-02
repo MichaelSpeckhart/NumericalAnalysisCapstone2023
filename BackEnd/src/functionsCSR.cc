@@ -424,6 +424,7 @@ CSRMatrix<T> load_fileCSR(string fileName)
     returnMatrix.row_ptr.push_back(0);
     T data;
     int row, col;
+    //Need to sort rows to ensure in row ascending order
     file >> row >> col >> data;
     row = row - 1;
     for (int i = 0; i < num_row; i++)

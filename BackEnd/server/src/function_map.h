@@ -12,3 +12,4 @@ std::vector<double> jacobi_iteration(const std::vector<std::vector<double>> &A, 
 bool gauss_seidel(const std::vector<std::vector<double>> &A, const std::vector<double> &b, std::vector<double> &x, const int max_iter);
 
 /* sparse matrix operations */
+//CSRMatrix<T> add_matrixCSR(const CSRMatrix<T> m1, const CSRMatrix<T> m2);
