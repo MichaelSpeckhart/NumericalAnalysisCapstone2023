@@ -50,6 +50,8 @@ namespace Capstone {
 
     std::vector<double> matrix_to_vector(matrix mat);
 
+    std::string vector_to_matrix(std::vector<double> vec);
+
     std::string serialize_matrix(matrix mat);
 
     std::string serialize_vector(std::vector<double> vec);

@@ -167,6 +167,11 @@ std::vector<double> Capstone::matrix_to_vector(matrix mat){
     return result;
 }
 
+std::string Capstone::vector_to_matrix(std::vector<double> vec){
+    std::string result = std::to_string(vec.size()) + ",1\n";
+    return result + Capstone::serialize_vector(vec);
+}
+
 std::string Capstone::serialize_matrix(matrix mat){
     std::cout << " serialize_matrix called\n" << std::endl;
     std::string result = "";
@@ -255,12 +260,8 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>, std::vector
             matrix m1 = mat_list[0];
             std::vector<double> v1 = matrix_to_vector(mat_list[1]);;
 
-            std::cout << "Matrix 1: " << Capstone::serialize_matrix(m1) << std::endl;
-            std::cout << "Vector 1: " << Capstone::serialize_vector(v1) << std::endl;
-            std::cout << "Vector 2: " << Capstone::serialize_matrix(mat_list[1]) << std::endl;
-
             if(gaussian_elimination(m1, v1)){ /* result is stored in v1 */
-                std::string result_str = Capstone::serialize_vector(v1);
+                std::string result_str = Capstone::vector_to_matrix(v1);
                 resp->client_response = result_str;
                 resp->succeeded = true;
             }else{
@@ -274,7 +275,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>, std::vector
             matrix m1 = mat_list[0];
             std::vector<int> res = lu_factorization_inplace(m1);
             std::vector<double> convert(res.begin(), res.end());
-            resp->client_response = serialize_vector(convert);
+            resp->client_response = vector_to_matrix(convert);
             resp->succeeded = true;
             break;
         }
@@ -288,7 +289,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>, std::vector
             std::vector<double> v1 = matrix_to_vector(mat_list[1]);
 
             std::vector<double> res = jacobi_iteration(m1, v1, TOLERANCE, MAX_ITER);
-            resp->client_response = serialize_vector(res);
+            resp->client_response = vector_to_matrix(res);
             resp->succeeded = true;
             break;
         }
@@ -301,7 +302,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>, std::vector
             std::vector<double> x(v1.size(), 0.0);
 
             if(gauss_seidel(m1, v1, x, MAX_ITER)){
-                resp->client_response = serialize_vector(x);
+                resp->client_response = vector_to_matrix(x);
                 resp->succeeded = true;
             }else{
                 resp->client_response = "Error completing gauss sidel \n";
