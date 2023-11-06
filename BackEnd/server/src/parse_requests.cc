@@ -256,8 +256,9 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>, std::vector
             matrix m1 = mat_list[0];
             std::vector<double> v1 = matrix_to_colvector(mat_list[1]);;
 
-            if(gaussian_elimination(m1, v1)){
+            if(gaussian_elimination(m1, v1)){ /* result is stored in v1 */
                 std::string result_str = Capstone::serialize_vector(v1);
+                std::cout << "Result: " << result_str << std::endl;
                 resp->client_response = result_str;
                 resp->succeeded = true;
             }else{
