@@ -169,7 +169,16 @@ std::vector<double> Capstone::matrix_to_vector(matrix mat){
 
 std::string Capstone::vector_to_matrix(std::vector<double> vec){
     std::string result = std::to_string(vec.size()) + ",1\n";
-    return result + Capstone::serialize_vector(vec);
+    std::stringstream token;
+    for(size_t i = 0; i < vec.size(); i++){
+        token << std::fixed << std::setprecision(2) << vec[i];
+        result += token.str();
+        token.str(std::string()); /* clear the stringstream */
+        if(i != vec.size() - 1){ /* only add comma if not the end */
+            result += ",";
+        }
+    }
+    return result;
 }
 
 std::string Capstone::serialize_matrix(matrix mat){
