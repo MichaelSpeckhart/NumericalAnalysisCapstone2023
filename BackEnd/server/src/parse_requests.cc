@@ -257,12 +257,12 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>, std::vector
             std::vector<double> v1 = matrix_to_colvector(mat_list[1]);;
 
             if(gaussian_elimination(m1, v1)){ /* result is stored in v1 */
+                std::cout << "Result: " << Capstone::serialize_vector(v1) << std::endl;
                 std::string result_str = Capstone::serialize_vector(v1);
-                std::cout << "Result: " << result_str << std::endl;
                 resp->client_response = result_str;
                 resp->succeeded = true;
             }else{
-                resp->client_response = "Error completing gauzz elimination\n";
+                resp->client_response = "Error completing gauss elimination\n";
                 resp->succeeded = false;
             }
             break;
