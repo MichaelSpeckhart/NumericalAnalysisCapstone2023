@@ -158,11 +158,11 @@ std::tuple<std::vector<double>, std::vector<matrix>> Capstone::parse_data(receiv
  *
  * @returns A column vector representation of the matrix.
  */
-std::vector<double> Capstone::matrix_to_colvector(matrix mat){
+std::vector<double> Capstone::matrix_to_vector(matrix mat){
     /* assumes matrix is in the right format */
     std::vector<double> result;
-    for(int row = 0; row < (int) mat.size(); row++){
-        result.push_back(mat[row][0]);
+    for(int row = 0; row < (int) mat[0].size(); row++){
+        result.push_back(mat[0][row]);
     }
     return result;
 }
@@ -253,7 +253,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>, std::vector
         case 0x20:{ /* gauss elimination */
             std::vector<matrix> mat_list = std::get<1>(data); /* access the list of matrices from tuple */
             matrix m1 = mat_list[0];
-            std::vector<double> v1 = matrix_to_colvector(mat_list[1]);;
+            std::vector<double> v1 = matrix_to_vector(mat_list[1]);;
 
             std::cout << "Matrix 1: " << Capstone::serialize_matrix(m1) << std::endl;
             std::cout << "Vector 1: " << Capstone::serialize_vector(v1) << std::endl;
@@ -285,7 +285,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>, std::vector
             std::vector<matrix> mat_list = std::get<1>(data); /* access the list of matrices from tuple */
             matrix m1 = mat_list[0];
             /* grab the vector */
-            std::vector<double> v1 = matrix_to_colvector(mat_list[1]);
+            std::vector<double> v1 = matrix_to_vector(mat_list[1]);
 
             std::vector<double> res = jacobi_iteration(m1, v1, TOLERANCE, MAX_ITER);
             resp->client_response = serialize_vector(res);
@@ -297,7 +297,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>, std::vector
 
             std::vector<matrix> mat_list = std::get<1>(data); /* access the list of matrices from tuple */
             matrix m1 = mat_list[0];
-            std::vector<double> v1 = matrix_to_colvector(mat_list[1]);
+            std::vector<double> v1 = matrix_to_vector(mat_list[1]);
             std::vector<double> x(v1.size(), 0.0);
 
             if(gauss_seidel(m1, v1, x, MAX_ITER)){
