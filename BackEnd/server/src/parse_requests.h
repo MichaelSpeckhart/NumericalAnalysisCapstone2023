@@ -48,7 +48,9 @@ namespace Capstone {
 
     std::tuple<std::vector<double>, std::vector<matrix>> parse_data(received_t msg); 
 
-    std::vector<double> matrix_to_colvector(matrix mat);
+    std::vector<double> matrix_to_vector(matrix mat);
+
+    std::string vector_to_matrix(std::vector<double> vec);
 
     std::string serialize_matrix(matrix mat);
 

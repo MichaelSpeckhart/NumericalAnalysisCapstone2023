@@ -158,11 +158,25 @@ std::tuple<std::vector<double>, std::vector<matrix>> Capstone::parse_data(receiv
  *
  * @returns A column vector representation of the matrix.
  */
-std::vector<double> Capstone::matrix_to_colvector(matrix mat){
+std::vector<double> Capstone::matrix_to_vector(matrix mat){
     /* assumes matrix is in the right format */
     std::vector<double> result;
-    for(int row = 0; row < (int) mat.size(); row++){
-        result.push_back(mat[row][0]);
+    for(int row = 0; row < (int) mat[0].size(); row++){
+        result.push_back(mat[0][row]);
+    }
+    return result;
+}
+
+std::string Capstone::vector_to_matrix(std::vector<double> vec){
+    std::string result = std::to_string(vec.size()) + ",1\n";
+    std::stringstream token;
+    for(size_t i = 0; i < vec.size(); i++){
+        token << std::fixed << std::setprecision(2) << vec[i];
+        result += token.str();
+        token.str(std::string()); /* clear the stringstream */
+        if(i != vec.size() - 1){ /* only add comma if not the end */
+            result += ",";
+        }
     }
     return result;
 }
@@ -252,16 +266,15 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>, std::vector
         }
         case 0x20:{ /* gauss elimination */
             std::vector<matrix> mat_list = std::get<1>(data); /* access the list of matrices from tuple */
-            std::cout << "Im working 1" << std::endl;
             matrix m1 = mat_list[0];
-            std::vector<double> v1 = matrix_to_colvector(mat_list[1]);;
+            std::vector<double> v1 = matrix_to_vector(mat_list[1]);;
 
-            if(gaussian_elimination(m1, v1)){
-                std::string result_str = Capstone::serialize_vector(v1);
+            if(gaussian_elimination(m1, v1)){ /* result is stored in v1 */
+                std::string result_str = Capstone::vector_to_matrix(v1);
                 resp->client_response = result_str;
                 resp->succeeded = true;
             }else{
-                resp->client_response = "Error completing gauzz elimination\n";
+                resp->client_response = "Error completing gauss elimination\n";
                 resp->succeeded = false;
             }
             break;
@@ -271,7 +284,7 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>, std::vector
             matrix m1 = mat_list[0];
             std::vector<int> res = lu_factorization_inplace(m1);
             std::vector<double> convert(res.begin(), res.end());
-            resp->client_response = serialize_vector(convert);
+            resp->client_response = vector_to_matrix(convert);
             resp->succeeded = true;
             break;
         }
@@ -282,10 +295,10 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>, std::vector
             std::vector<matrix> mat_list = std::get<1>(data); /* access the list of matrices from tuple */
             matrix m1 = mat_list[0];
             /* grab the vector */
-            std::vector<double> v1 = matrix_to_colvector(mat_list[1]);
+            std::vector<double> v1 = matrix_to_vector(mat_list[1]);
 
             std::vector<double> res = jacobi_iteration(m1, v1, TOLERANCE, MAX_ITER);
-            resp->client_response = serialize_vector(res);
+            resp->client_response = vector_to_matrix(res);
             resp->succeeded = true;
             break;
         }
@@ -294,11 +307,11 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>, std::vector
 
             std::vector<matrix> mat_list = std::get<1>(data); /* access the list of matrices from tuple */
             matrix m1 = mat_list[0];
-            std::vector<double> v1 = matrix_to_colvector(mat_list[1]);
+            std::vector<double> v1 = matrix_to_vector(mat_list[1]);
             std::vector<double> x(v1.size(), 0.0);
 
             if(gauss_seidel(m1, v1, x, MAX_ITER)){
-                resp->client_response = serialize_vector(x);
+                resp->client_response = vector_to_matrix(x);
                 resp->succeeded = true;
             }else{
                 resp->client_response = "Error completing gauss sidel \n";
