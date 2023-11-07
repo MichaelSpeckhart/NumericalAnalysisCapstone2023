@@ -764,3 +764,49 @@ TEST_CASE("CSR ADD load file corectness") {
                                 {6.0, 0.0, 0.0}};
     CHECKCSR(m3,expected);
 }
+
+TEST_CASE("dense ADD load file corectness two") {
+    std::vector<std::vector<double>> m1 = load_fileMatrix<double>("../../../data/matrices/small_test_matrix.mtx");
+    std::vector<std::vector<double>> m2 = load_fileMatrix<double>("../../../data/matrices/small_test_matrix_two.mtx");
+    vector<vector<double>> expectedOne = {{0.5, 0.0, 2.0},
+                                {1.0, 0.0, -4.0},
+                                {3.0, 0.0, 0.0}};
+    CHECKMATRIX(m1,expectedOne);
+    vector<vector<double>> expectedTwo = {{1.0, 1.0, 1.0},
+                                {1.0, 1.0, 1.0},
+                                {1.0, 1.0, 1.0}};
+    CHECKMATRIX(m2,expectedTwo);
+    std::vector<std::vector<double>> m3 = sum_matrix(m1, m2);
+    vector<vector<double>> expectedThree = {{1.5, 1.0, 3.0},
+                                {2.0, 1.0, -3.0},
+                                {4.0, 1.0, 1.0}};
+    CHECKMATRIX(m3,expectedThree);
+    std::vector<std::vector<double>> m4 = sub_matrix(m1, m2);
+    vector<vector<double>> expectedFour = {{-0.5, -1.0, 1.0},
+                                {0.0, -1.0, -5.0},
+                                {2.0, -1.0, -1.0}};
+    CHECKMATRIX(m4,expectedFour);
+}
+
+TEST_CASE("CSR ADD load file corectness two") {
+    CSRMatrix<double> m1 = load_fileCSR<double>("../../../data/matrices/small_test_matrix.mtx");
+    CSRMatrix<double> m2 = load_fileCSR<double>("../../../data/matrices/small_test_matrix_two.mtx");
+    vector<vector<double>> expectedOne = {{0.5, 0.0, 2.0},
+                                {1.0, 0.0, -4.0},
+                                {3.0, 0.0, 0.0}};
+    CHECKCSR(m1,expectedOne);
+    vector<vector<double>> expectedTwo = {{1.0, 1.0, 1.0},
+                                {1.0, 1.0, 1.0},
+                                {1.0, 1.0, 1.0}};
+    CHECKCSR(m2,expectedTwo);
+    CSRMatrix<double> m3 = add_matrixCSR(m1, m2);
+    vector<vector<double>> expectedThree = {{1.5, 1.0, 3.0},
+                                {2.0, 1.0, -3.0},
+                                {4.0, 1.0, 1.0}};
+    CHECKCSR(m3,expectedThree);
+    CSRMatrix<double> m4 = subtract_matrixCSR(m1, m2);
+    vector<vector<double>> expectedFour = {{-0.5, -1.0, 1.0},
+                                {0.0, -1.0, -5.0},
+                                {2.0, -1.0, -1.0}};
+    CHECKCSR(m4,expectedFour);
+}
