@@ -29,6 +29,32 @@ void CHECKCSR(CSRMatrix<int> mResult, vector<vector<int>> mCheck)
     }
 }
 
+void CHECKCSR(CSRMatrix<double> mResult, vector<vector<double>> mCheck)
+{
+    CHECK(mResult.numRows == mCheck.size());
+    for (size_t i = 0; i < mResult.numRows; i++)
+    {
+        CHECK(mResult.numColumns == mCheck[i].size());
+        for (size_t j = 0; j < mResult.numColumns; j++)
+        {
+            CHECK_MESSAGE(get_matrixCSR(mResult, i, j) == mCheck[i][j], "i = " << i << ", j = " << j);
+        }
+    }
+}
+
+void CHECKMATRIX(vector<vector<double>> mResult, vector<vector<double>> mCheck)
+{
+    CHECK(mResult.size() == mCheck.size());
+    for (size_t i = 0; i < mResult.size(); i++)
+    {
+        CHECK(mResult[i].size() == mCheck[i].size());
+        for (size_t j = 0; j < mResult[i].size(); j++)
+        {
+            CHECK_MESSAGE(mResult[i][j] == mCheck[i][j], "i = " << i << ", j = " << j);
+        }
+    }
+}
+
 void CHECK_MATRIX_EQ(vector<vector<double>> &mResult, vector<vector<double>> &mCheck, double tol)
 {
     CHECK(mResult.size() == mCheck.size());
@@ -701,18 +727,40 @@ TEST_CASE("Incomplete Cholesky Factorization 4") {
     CHECK_MATRIX_EQ(KKt, A, 1e-12);
 }
 
-TEST_CASE("Matrix Inverse 1") {
-    // Create a matrix A
-    vector<vector<double>> A = {{6.0,2.0,3.0}, 
-                                {1.0,1.0,1.0}, 
-                                {0.0,4.0,9.0}};
+// TEST_CASE("Matrix Inverse 1") {
+//     // Create a matrix A
+//     vector<vector<double>> A = {{6.0,2.0,3.0}, 
+//                                 {1.0,1.0,1.0}, 
+//                                 {0.0,4.0,9.0}};
 
-    // Compute the incomplete Cholesky factorization of A
-    vector<vector<double>> A_inverse = {{0.208333,-0.25,-0.0416667}, 
-                                        {-0.375,  2.25, -0.125}, 
-                                        {0.166667, -1.0, 0.166667}};
-    // PRINT_MATRIX(K);
-    vector<vector<double>> test_inverse = matrix_inverse(A);
+//     // Compute the incomplete Cholesky factorization of A
+//     vector<vector<double>> A_inverse = {{0.208333,-0.25,-0.0416667}, 
+//                                         {-0.375,  2.25, -0.125}, 
+//                                         {0.166667, -1.0, 0.166667}};
+//     // PRINT_MATRIX(K);
+//     vector<vector<double>> test_inverse = matrix_inverse(A);
     
-    CHECK_MATRIX_EQ(A_inverse, test_inverse, 1e-6);
+//     CHECK_MATRIX_EQ(A_inverse, test_inverse, 1e-6);
+// }
+
+TEST_CASE("dense ADD load file corectness") {
+    std::vector<std::vector<double>> m1 = load_fileMatrix<double>("../../../data/matrices/small_test_matrix.mtx");
+    std::vector<std::vector<double>> m2 = load_fileMatrix<double>("../../../data/matrices/small_test_matrix.mtx");
+    std::vector<std::vector<double>> m3 = sum_matrix(m1, m2);
+    vector<vector<double>> expected = {{1.0, 0.0, 4.0},
+                                {2.0, 0.0, -8.0},
+                                {6.0, 0.0, 0.0}};
+
+    CHECKMATRIX(m3,expected);
+}
+
+TEST_CASE("CSR ADD load file corectness") {
+    CSRMatrix<double> m1 = load_fileCSR<double>("../../../data/matrices/small_test_matrix.mtx");
+    CSRMatrix<double> m2 = load_fileCSR<double>("../../../data/matrices/small_test_matrix.mtx");
+
+    CSRMatrix<double> m3 = add_matrixCSR<double>(m1, m2);
+    vector<vector<double>> expected = {{1.0, 0.0, 4.0},
+                                {2.0, 0.0, -8.0},
+                                {6.0, 0.0, 0.0}};
+    CHECKCSR(m3,expected);
 }

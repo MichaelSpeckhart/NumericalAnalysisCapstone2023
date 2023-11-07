@@ -1075,3 +1075,42 @@ bool matrix_inverse(std::vector<std::vector<double>> &A) {
     return true; /* result is stored in A */
 }
 
+/// @brief Creates dense matrix for .mtx file
+/// @tparam T the type of matrix
+/// @param fileName the name of the file to import
+/// @return a new dense matrix from the filename
+template <typename T>
+std::vector<std::vector<T>> load_fileMatrix(const std::string& fileName) {
+    std::ifstream file(fileName);
+
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << fileName << std::endl;
+        exit(1); // Handle the error as per your requirements
+    }
+
+    int num_row = 0, num_col = 0, num_lines = 0;
+
+    // Ignore comments and headers starting with '%'
+    while (file.peek() == '%')
+        file.ignore(2048, '\n');
+
+    // Read number of rows, columns, and non-zero values
+    file >> num_row >> num_col >> num_lines;
+
+    std::vector<std::vector<T>> matrix(num_row, std::vector<T>(num_col, 0));
+
+    T data;
+    int row, col;
+
+    for (int i = 0; i < num_lines; i++) {
+        file >> row >> col >> data;
+        row--; // Convert from 1-based to 0-based index
+        col--; // Convert from 1-based to 0-based index
+
+        matrix[row][col] = data;
+    }
+
+    file.close();
+
+    return matrix;
+}
