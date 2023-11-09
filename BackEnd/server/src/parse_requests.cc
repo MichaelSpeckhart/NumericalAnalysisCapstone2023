@@ -268,9 +268,11 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>, std::vector
             std::vector<matrix> mat_list = std::get<1>(data); /* access the list of matrices from tuple */
             matrix m1 = mat_list[0];
             std::vector<double> v1 = matrix_to_vector(mat_list[1]);;
+            std::cout << "matrix: " << Capstone::serialize_matrix(m1) << std::endl;
+            std::cout << "vector: " << Capstone::serialize_vector(v1) << std::endl;
 
             if(gaussian_elimination(m1, v1)){ /* result is stored in v1 */
-                std::cout << "Gauss res: " << Capstone::serialize_vector(v1) << std::endl;
+                std::cout << "result: " << Capstone::serialize_vector(v1) << std::endl;
                 std::string result_str = Capstone::vector_to_matrix(v1);
                 resp->client_response = result_str;
                 resp->succeeded = true;
