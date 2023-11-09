@@ -400,7 +400,93 @@ T find_max_CSR(CSRMatrix<T> matrix)
     return max_value;
 }
 
+// IN CORRECT BECAUSE .mtx is not sorted by rows
+// /// @brief Creates CSR matrix for .mtx file
+// /// @tparam T the type of matrix
+// /// @param fileName the name of the file to import
+// /// @return a new CSR matrix from the filename
+// template <typename T>
+// CSRMatrix<T> load_fileCSR(string fileName)
+// {
+//     std::ifstream file(fileName);
+//     int num_row = 0, num_col = 0, num_lines = 0;
 
+//     // Ignore comments headers
+//     while (file.peek() == '%')
+//         file.ignore(2048, '\n');
+
+//     // Read number of rows, columns, and non-zero values
+//     file >> num_row >> num_col >> num_lines;
+
+//     CSRMatrix<T> returnMatrix;
+//     returnMatrix.numRows = num_row;
+//     returnMatrix.numColumns = num_col;
+//     returnMatrix.row_ptr.push_back(0);
+//     T data;
+//     int row, col;
+//     //Need to sort rows to ensure in row ascending order
+//     file >> row >> col >> data;
+//     row = row - 1;
+//     for (int i = 0; i < num_row; i++)
+//     {
+//         while (num_lines > 0 && row == i)
+//         {
+//             returnMatrix.val.push_back(data);
+//             returnMatrix.col_ind.push_back(col--);
+//             file >> row >> col >> data;
+//             row--;
+//             num_lines--;
+//         }
+//         // this happens every time
+//         returnMatrix.row_ptr.push_back(returnMatrix.val.size());
+//     }
+
+//     file.close();
+
+//     return returnMatrix;
+// }
+
+//reincluding dense load, importing functions.cc causes redefination errors
+/// @brief Creates dense matrix for .mtx file
+/// @tparam T the type of matrix
+/// @param fileName the name of the file to import
+/// @return a new dense matrix from the filename
+template <typename T>
+std::vector<std::vector<T>> load_fileMatrix_internal(const std::string& fileName) {
+    std::ifstream file(fileName);
+
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << fileName << std::endl;
+        exit(1); // Handle the error as per your requirements
+    }
+
+    int num_row = 0, num_col = 0, num_lines = 0;
+
+    // Ignore comments and headers starting with '%'
+    while (file.peek() == '%')
+        file.ignore(2048, '\n');
+
+    // Read number of rows, columns, and non-zero values
+    file >> num_row >> num_col >> num_lines;
+
+    std::vector<std::vector<T>> matrix(num_row, std::vector<T>(num_col, 0));
+
+    T data;
+    int row, col;
+
+    for (int i = 0; i < num_lines; i++) {
+        file >> row >> col >> data;
+        row--; // Convert from 1-based to 0-based index
+        col--; // Convert from 1-based to 0-based index
+
+        matrix[row][col] = data;
+    }
+
+    file.close();
+
+    return matrix;
+}
+//SLOW FILE READ BUT FINE FOR SMALL MATRICES
 /// @brief Creates CSR matrix for .mtx file
 /// @tparam T the type of matrix
 /// @param fileName the name of the file to import
@@ -408,42 +494,8 @@ T find_max_CSR(CSRMatrix<T> matrix)
 template <typename T>
 CSRMatrix<T> load_fileCSR(string fileName)
 {
-    std::ifstream file(fileName);
-    int num_row = 0, num_col = 0, num_lines = 0;
-
-    // Ignore comments headers
-    while (file.peek() == '%')
-        file.ignore(2048, '\n');
-
-    // Read number of rows, columns, and non-zero values
-    file >> num_row >> num_col >> num_lines;
-
-    CSRMatrix<T> returnMatrix;
-    returnMatrix.numRows = num_row;
-    returnMatrix.numColumns = num_col;
-    returnMatrix.row_ptr.push_back(0);
-    T data;
-    int row, col;
-    //Need to sort rows to ensure in row ascending order
-    file >> row >> col >> data;
-    row = row - 1;
-    for (int i = 0; i < num_row; i++)
-    {
-        while (num_lines > 0 && row == i)
-        {
-            returnMatrix.val.push_back(data);
-            returnMatrix.col_ind.push_back(col);
-            file >> row >> col >> data;
-            row--;
-            num_lines--;
-        }
-        // this happens every time
-        returnMatrix.row_ptr.push_back(returnMatrix.val.size());
-    }
-
-    file.close();
-
-    return returnMatrix;
+    vector<vector<T>> dense_result = load_fileMatrix_internal<T>(fileName);
+    return from_vector_CSR<T>(dense_result);
 }
 
 /**
