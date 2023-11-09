@@ -287,8 +287,8 @@ void Capstone::map_func(uint32_t id, std::tuple<std::vector<double>, std::vector
             std::vector<matrix> mat_list = std::get<1>(data);
             matrix m1 = mat_list[0];
             std::vector<int> res = lu_factorization_inplace(m1);
-            std::vector<double> convert(res.begin(), res.end());
-            resp->client_response = vector_to_matrix(convert);
+            std::string result_str = Capstone::serialize_matrix(result);
+            resp->client_response = result_str;
             resp->succeeded = true;
             break;
         }
