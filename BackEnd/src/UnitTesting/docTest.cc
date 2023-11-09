@@ -822,3 +822,31 @@ TEST_CASE("CSR ADD load file corectness two") {
                                 {2.0, -1.0, -1.0}};
     CHECKCSR(m4,expectedFour);
 }
+
+TEST_CASE("Gauss Seidel Iteration CSR 0")
+{
+    std::vector<std::vector<double>> A = {{4.0, 1.0, 1.0}, {1.0, 4.0, 1.0}, {1.0, 1.0, 4.0}};
+    auto CSR_A = from_vector_CSR<double>(A);
+    std::vector<double> b = {6.0, 6.0, 6.0};
+    const double tol = 1e-6;
+    const int max_iter = 100;
+
+    std::vector<double> x_expected = {1.0, 1.0, 1.0};
+    std::vector<double> x = gauss_sidel_CSR<double>(CSR_A, b,tol, max_iter);
+
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+}
+
+TEST_CASE("Gauss Seidel Iteration CSR 1")
+{
+    std::vector<std::vector<double>> A = {{3.0, 1.0, 1.0}, {1.0, 5.0, 2.0}, {2.0, 3.0, 6.0}};
+    auto CSR_A = from_vector_CSR<double>(A);
+    const std::vector<double> b = {5.0, 10.0, 15.0};
+    const double tol = 1e-6;
+    const int max_iter = 100;
+
+    std::vector<double> x_expected = {0.714286, 1.190476, 1.666667};
+    std::vector<double> x = gauss_sidel_CSR(CSR_A, b, tol, max_iter);
+
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+}

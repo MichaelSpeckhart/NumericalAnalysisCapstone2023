@@ -583,3 +583,81 @@ std::vector<T> jacobi_method_CSR(CSRMatrix<T> m1, std::vector<T> B, const double
 }
 return approxValues;
 }
+
+/**
+ * @brief CSR Gauss-Seidel Method. Similar to the Jacobi method however we update the X vector directly
+ * instead
+ * 
+ * @tparam T 
+ * @param m1 
+ * @param B 
+ * @param tol 
+ * @param maxIterations 
+ * @return std::vector<T> 
+ */
+template <typename T>
+std::vector<T> gauss_sidel_CSR(CSRMatrix<T> m1, std::vector<T> B, const double tol,int maxIterations) {
+    if (diagonally_dominant(m1) == false) {
+        throw std::invalid_argument("Input matrix is not diagonally dominant");
+    }
+    std::vector<T> xValues(B.size(), 0.0);
+    std::vector<T> approxValues(B.size(), 0.0);
+    int iterations = 0;
+    double diff = tol + 1.0;
+    while (iterations < maxIterations && diff > tol) {
+        for (size_t i = 0; i < m1.numRows; ++i) {
+            size_t a1 = m1.row_ptr.at(i);
+            size_t b1 = m1.row_ptr.at(i + 1);
+            T sum = 0.0;
+            T diagonal = 0.0;
+            while(a1 < b1){
+                if(m1.col_ind[a1] == i){
+                    diagonal = m1.val[a1];
+                }else{
+                    sum += m1.val[a1] * xValues[m1.col_ind[a1]];
+                }
+                a1++;
+            }
+            //no divide by zero error becuase of diagonally dominant check
+            xValues[i] = (B[i] - sum) / diagonal;
+            
+        }
+        iterations++;
+    }
+
+    return xValues;
+}
+
+/**
+ * @brief 
+ * 
+ * @tparam T 
+ * @param m1 
+ */
+template <typename T> 
+    void lu_decomposition_CSR(CSRMatrix<T> m1) {
+        int n = m1.row_ptr.size() - 1;
+        CSRMatrix<T> L;
+        L.val = m1.vals;
+        L.row_ptr = m1.row_ptr;
+        L.col_ind = m1.col_ind;
+        CSRMatrix<T> U;
+        U.val = m1.val;
+        U.row_ptr = m1.row_ptr;
+        U.col_ind = m1.col_ind;
+
+        for (int i = 0; i < n; ++i) {
+            L.val.at(L.row_ptr[i]) = 1.0;
+
+            
+        }
+
+
+
+
+
+
+
+
+
+    }
