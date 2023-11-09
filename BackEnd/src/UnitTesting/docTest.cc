@@ -510,6 +510,18 @@ TEST_CASE("LU Factorization test 2")
     CHECK_MATRIX_EQ(L_U, P_A, 1e-6);
 }
 
+// test for LU factorization
+TEST_CASE("LU Factorization in Place")
+{
+    // Test a 2x2 matrix
+    std::vector<std::vector<double>> A = {{1, 2}, {3, 4}};
+
+    auto result = lu_factorization_inplace(A);
+
+    std::vector<std::vector<double>> expected = {{3, 4}, {0.3333333, 0.66666667}};
+        CHECK_MATRIX_EQ(A, expected, 1e-6);
+}
+
 
 // test for LDL factorization
 TEST_CASE("LDL^T Factorization")
