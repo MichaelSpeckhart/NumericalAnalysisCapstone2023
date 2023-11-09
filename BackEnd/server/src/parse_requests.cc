@@ -162,7 +162,7 @@ std::vector<double> Capstone::matrix_to_vector(matrix mat){
     /* assumes matrix is in the right format */
     std::vector<double> result;
     for(int row = 0; row < (int) mat[0].size(); row++){
-        result.push_back(mat[0][row]);
+        result.push_back(mat[row][0]);
     }
     return result;
 }
