@@ -628,6 +628,56 @@ std::vector<T> gauss_sidel_CSR(CSRMatrix<T> m1, std::vector<T> B, const double t
     return xValues;
 }
 
+template <typename T>
+std::vector<T> ssor_iteration_CSR(CSRMatrix<T> A,
+                                  const std::vector<T> &b,
+                                  const T tol,
+                                  const int max_iter,
+                                  const T omega)
+{
+    const int n = A.numRows;
+    std::vector<T> x(n, 0.0);
+    std::vector<T> x_new(n, 0.0);
+
+    int iter = 0;
+    T diff = tol + 1.0;
+
+    while (iter < max_iter && diff > tol)
+    {
+        // Normally one needs to solve M(x_new - x) = b - Ax using lu_solve where M = (D + omega*L)^-1 * (D + omega*U),
+        // L is the strict lower triangular part of A, U is the strict upper triangular part of A, and D is the diagonal of A.
+        // However, according to https://en.wikipedia.org/wiki/Successive_over-relaxation, we can use forward substitution:
+        for (int i = 0; i < n; i++)
+        {
+            T sum = 0.0, diag;
+            for (int k = A.row_ptr[i]; k < A.row_ptr[i+1]; k++) {
+                int j = A.col_ind[k];
+                if (j < i) {
+                    sum += A.val[k] * x_new[j];
+                } else if (j > i) {
+                    sum += A.val[k] * x[j];
+                } else {
+                    diag = A.val[k];
+                }
+            }
+            x_new[i] = (1.0 - omega) * x[i] + (omega / diag) * (b[i] - sum);
+        }
+        // Compute the difference between the new and old iterates
+        diff = 0.0;
+        for (int i = 0; i < n; i++)
+        {
+            T abs_diff = std::abs(x_new[i] - x[i]);
+            if (abs_diff > diff)
+            {
+                diff = abs_diff;
+            }
+        }
+        x = x_new;
+        iter++;
+    }
+    return x;
+}
+
 /**
  * @brief 
  * 

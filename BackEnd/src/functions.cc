@@ -856,45 +856,254 @@ std::vector<double> ssor_iteration(const std::vector<std::vector<double>> &A,
 }
 
 
-/**
- * @brief Incomplete Cholesky Factorization
- * 
- * @param A 
- * @param tol 
- * @return std::vector<vector<double>> 
- */
-std::vector<vector<double>> incompleteCholesky(const vector<vector<double>> &A, double tol)
-{
-    int n = A.size();
-    vector<vector<double>> L(n, vector<double>(n));
+// /**
+//  * @brief Incomplete Cholesky Factorization
+//  * 
+//  * @param A 
+//  * @param tol 
+//  * @return std::vector<vector<double>> 
+//  */
+// std::vector<vector<double>> incompleteCholesky(const vector<vector<double>> &A, double tol)
+// {
+//     int n = A.size();
+//     vector<vector<double>> L(n, vector<double>(n));
 
-    // Compute the lower triangle of A
-    for (int i = 0; i < n; ++i)
+//     // Compute the lower triangle of A
+//     for (int i = 0; i < n; ++i)
+//     {
+//         // cout << "A[i][i]: " << A[i][i] << endl;
+//         double d = A[i][i];
+//         for (int k = 0; k < i; ++k)
+//         {
+//             // cout << "i, k, d: " << i << ", " << k << ", " << d << endl;
+//             d -= L[i][k] * L[i][k];
+//         }
+//         // cout << "d: " << d << endl;
+//         L[i][i] = std::sqrt(std::max(d, 0.0));
+//         for (int j = i + 1; j < n; ++j)
+//         {
+//             double s = 0.0;
+//             for (int k = 0; k < i; ++k)
+//             {
+//                 s += L[i][k] * L[j][k];
+//                 // cout << "j, k, i, s: " << j << ", " << k << ", " << i << ", " << s << endl;
+//             }
+//             L[j][i] = (A[j][i] - s) / L[i][i];
+//             // d -= L[j][k] * L[j][k];
+//         }
+//     }
+
+//     return L;
+// }
+
+// Solve the linear system Ax = b using SSOR iteration with relaxation parameter omega
+// A is a square matrix of size n x n
+// b is a vector of length n
+// tol is the tolerance for convergence
+// max_iter is the maximum number of iterations to perform
+// omega is the relaxation parameter (0 < omega < 2)
+// Return the solution x as a vector of length n
+std::vector<double> ssor_iteration(const std::vector<std::vector<double>> &A,
+                                   const std::vector<double> &b,
+                                   const double tol,
+                                   const int max_iter,
+                                   const double omega)
+{
+    const int n = A.size();
+    std::vector<double> x(n, 0.0);
+    std::vector<double> x_new(n, 0.0);
+
+    int iter = 0;
+    double diff = tol + 1.0;
+
+    while (iter < max_iter && diff > tol)
     {
-        // cout << "A[i][i]: " << A[i][i] << endl;
-        double d = A[i][i];
-        for (int k = 0; k < i; ++k)
+        // Normally one needs to solve M(x_new - x) = b - Ax using lu_solve where M = (D + omega*L)^-1 * (D + omega*U),
+        // L is the strict lower triangular part of A, U is the strict upper triangular part of A, and D is the diagonal of A.
+        // However, according to https://en.wikipedia.org/wiki/Successive_over-relaxation, we can use forward substitution:
+        for (int i = 0; i < n; i++)
         {
-            // cout << "i, k, d: " << i << ", " << k << ", " << d << endl;
-            d -= L[i][k] * L[i][k];
-        }
-        // cout << "d: " << d << endl;
-        L[i][i] = std::sqrt(std::max(d, 0.0));
-        for (int j = i + 1; j < n; ++j)
-        {
-            double s = 0.0;
-            for (int k = 0; k < i; ++k)
+            double sum = 0.0;
+            for (int j = 0; j < i; j++)
             {
-                s += L[i][k] * L[j][k];
-                // cout << "j, k, i, s: " << j << ", " << k << ", " << i << ", " << s << endl;
+                sum += A[i][j] * x_new[j];
             }
-            L[j][i] = (A[j][i] - s) / L[i][i];
-            // d -= L[j][k] * L[j][k];
+            for (int j = i + 1; j < n; j++)
+            {
+                sum += A[i][j] * x[j];
+            }
+            x_new[i] = (1.0 - omega) * x[i] + (omega / A[i][i]) * (b[i] - sum);
         }
+        // Compute the difference between the new and old iterates
+        diff = 0.0;
+        for (int i = 0; i < n; i++)
+        {
+            double abs_diff = std::abs(x_new[i] - x[i]);
+            if (abs_diff > diff)
+            {
+                diff = abs_diff;
+            }
+        }
+        x = x_new;
+        iter++;
     }
 
-    return L;
+    return x;
 }
+
+// Perform general ILU factorization in-place:
+// A is a square matrix of size n x n to be factored
+// P is a zero pattern set such that P[i][j] = true if (i, j) belongs to P
+std::vector<int> ilu_factorization_general(std::vector<std::vector<double>> &A, std::vector<std::vector<bool>> &P)
+{
+    const size_t n = A.size();
+    std::vector<int> p(n);
+    if (n != A[0].size())
+    {
+        throw invalid_argument("Error: Matrix must be square nxn");
+    }
+    // Initialize the permutation matrix to the identity matrix
+    for (size_t i = 0; i < n; i++)
+    {
+        p[i] = i;
+    }
+
+    // Perform LU factorization with partial pivoting
+    for (size_t k = 0; k < n - 1; k++)
+    {
+        // Find pivot row and swap
+        size_t pivot_row = k;
+        double pivot_val = std::abs(A[k][k]);
+        for (size_t i = k + 1; i < n; i++)
+        {
+            double val = std::abs(A[i][k]);
+            if (val > pivot_val)
+            {
+                pivot_val = val;
+                pivot_row = i;
+            }
+        }
+        if (pivot_val == 0)
+        {
+            throw std::runtime_error("Singular matrix");
+        }
+        if (pivot_row != k)
+        {
+            std::swap(p[k], p[pivot_row]);
+            std::swap(A[k], A[pivot_row]);
+            std::swap(P[k], P[pivot_row]);
+        }
+
+        // Eliminate entries below the pivot
+        for (size_t i = k + 1; i < n; i++)
+        {
+            if (P[i][k])
+            {
+                continue;
+            }
+            double factor = A[i][k] / A[k][k];
+            A[i][k] = factor;
+            for (size_t j = k + 1; j < n; j++)
+            {
+                if (P[k][j])
+                {
+                    continue;
+                }
+                A[i][j] -= factor * A[k][j];
+            }
+        }
+    }
+    return p;
+}
+
+// Perform ILU factorization in-place with level p fill-in
+// A is a square matrix of size n x n to be factored
+// p is the level of fill-in
+void ilu(std::vector<std::vector<double>> &A, const int p)
+{
+    const size_t n = A.size();
+    if (n != A[0].size())
+    {
+        throw invalid_argument("Error: Matrix must be square nxn");
+    }
+    std::vector<std::vector<int>> level(n, std::vector<int>(n, 0));
+    for (size_t i = 0; i < n; i++)
+    {
+        for (size_t j = 0; j < n; j++)
+        {
+            if ((i != j) && A[i][j] == 0)
+            {
+                level[i][j] = INT_MAX;
+            }
+        }
+    }
+    for (int i = 1; i < n; i++) {
+        for (int k = 0; k < i; k++) {
+            if (A[i][k] > p) {
+                continue;
+            }
+            A[i][k] = A[i][k] / A[k][k];
+            for (int j = k + 1; j < n; j++) {
+                if (level[i][j] > p) {
+                    continue;
+                }
+                A[i][j] = A[i][j] - A[i][k] * A[k][j];
+                if (A[i][j] != 0 && level[i][k] < INT_MAX && level[k][j] < INT_MAX) {
+                    level[i][j] = std::min(level[i][j], level[i][k] + level[k][j] + 1);
+                }
+            }
+        }
+        for (int j=0; j < n; j++) {
+            if (level[i][j] > p) {
+                A[i][j] = 0;
+            }
+        }
+    }
+}
+
+// Perform ILUT factorization in-place
+// A is a square matrix of size n x n to be factored
+void ilut(std::vector<std::vector<double>> &A, int p, double tau)
+{   
+    const size_t n = A.size();
+    if (n != A[0].size())
+    {
+        throw invalid_argument("Error: Matrix must be square nxn");
+    }
+
+    vector<double> norms(n, 0);
+    for (size_t i = 0; i < n; i++) {
+        for (size_t j = 0; j < n; j++) {
+            norms[i] += A[i][j] * A[i][j];
+        }
+        norms[i] = sqrt(norms[i]);
+    }
+
+    for (int i = 0; i < n; i++) {
+        double tau_i = tau * norms[i];
+        for (int k = 0; k < i; k++) {
+            if (A[i][k] != 0) {
+                A[i][k] = A[i][k] / A[k][k];
+                // First dropping rule
+                if (abs(A[i][k]) < tau_i) {
+                    A[i][k] = 0;
+                    continue;
+                }
+                for (int j = k+1 ; j < n; j++) {
+                    A[i][j] -= A[i][k] * A[k][j];
+                }
+            }
+        }
+        // Second dropping rule
+        for (int j = 0; j < n; j++) {
+            if (abs(A[i][j]) < tau_i) {
+                A[i][j] = 0;
+            }
+        }
+        // TODO: Keep only the p largest elements of L[i] and U[i]
+    }    
+}
+
 
 /**
  * @brief Finding Matrix determinant, once matrix size gets to over 1000x1000, this will not compute in a fast
