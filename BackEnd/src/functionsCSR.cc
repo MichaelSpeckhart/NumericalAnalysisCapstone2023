@@ -678,6 +678,7 @@ std::vector<T> ssor_iteration_CSR(CSRMatrix<T> A,
     return x;
 }
 
+
 /**
  * @brief 
  * 
@@ -697,17 +698,6 @@ template <typename T>
         U.col_ind = m1.col_ind;
 
         for (int i = 0; i < n; ++i) {
-            L.val.at(L.row_ptr[i]) = 1.0;
-
-            
+            L.val.at(L.row_ptr[i]) = 1.0;   
         }
-
-
-
-
-
-
-
-
-
     }
