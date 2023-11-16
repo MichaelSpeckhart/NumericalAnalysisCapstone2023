@@ -1130,7 +1130,7 @@ std::vector<double> left_mult_vector(const std::vector<std::vector<double>> &A, 
     return y;
 }
 
-// GCR method
+// GCR method solves Ax = b
 // A is the matrix and b is the right-hand side vector
 // x is the initial guess for the solution
 // max_iter is the maximum number of iterations to perform
