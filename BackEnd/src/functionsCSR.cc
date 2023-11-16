@@ -597,9 +597,9 @@ return approxValues;
  */
 template <typename T>
 std::vector<T> gauss_sidel_CSR(CSRMatrix<T> m1, std::vector<T> B, const double tol,int maxIterations) {
-    if (diagonally_dominant(m1) == false) {
-        throw std::invalid_argument("Input matrix is not diagonally dominant");
-    }
+    // if (diagonally_dominant(m1) == false) {
+    //     throw std::invalid_argument("Input matrix is not diagonally dominant");
+    // }
     std::vector<T> xValues(B.size(), 0.0);
     std::vector<T> approxValues(B.size(), 0.0);
     int iterations = 0;
@@ -619,12 +619,22 @@ std::vector<T> gauss_sidel_CSR(CSRMatrix<T> m1, std::vector<T> B, const double t
                 a1++;
             }
             //no divide by zero error becuase of diagonally dominant check
-            xValues[i] = (B[i] - sum) / diagonal;
+            approxValues[i] = (B[i] - sum) / diagonal;
             
         }
+        diff = 0.0;
+        for (int i = 0; i < m1.numRows; i++)
+        {
+            T abs_diff = std::abs(approxValues[i] - xValues[i]);
+            if (abs_diff > diff)
+            {
+                diff = abs_diff;
+            }
+        }
+        xValues = approxValues;
         iterations++;
     }
-
+    cerr << "Gauss Sidel Sparse Itertions: "<< iterations <<endl;
     return xValues;
 }
 
@@ -701,3 +711,4 @@ template <typename T>
             L.val.at(L.row_ptr[i]) = 1.0;   
         }
     }
+

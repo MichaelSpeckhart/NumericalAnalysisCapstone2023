@@ -586,9 +586,8 @@ TEST_CASE("Gauss-Seidel")
     int max_iter = 100;
 
     std::vector<double> x_expected = {1.0, 1.0};
-    bool success = gauss_seidel(A, b, x, max_iter);
+    std::vector<double> x = gauss_seidel(A, b, tol, max_iter);
 
-    CHECK(success);
     CHECK_VECTOR_EQ(x, x_expected, tol);
 }
 

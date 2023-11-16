@@ -685,30 +685,19 @@ pair<std::vector<std::vector<double>>, std::vector<double>> ldlt_factorization(s
 // Solves Ax = b using Gauss-Seidel method
 // A is the matrix and b is the right-hand side vector
 // x is the initial guess for the solution and max_iter is the maximum number of iterations
-// Returns true if successful, false otherwise
-bool gauss_seidel(const std::vector<std::vector<double>> &A, const std::vector<double> &b, std::vector<double> &x, const int max_iter)
+// Returns solution to the system
+std::vector<double> gauss_seidel(const std::vector<std::vector<double>> &A, const std::vector<double> &b, const double tol,const int max_iter)
 {
     const int n = A.size();
 
-    // Check for diagonally dominance
-    for (int i = 0; i < n; i++)
-    {
-        double sum = 0;
-        for (int j = 0; j < n; j++)
-        {
-            if (i != j)
-            {
-                sum += std::abs(A[i][j]);
-            }
-        }
-        if (std::abs(A[i][i]) < sum)
-        {
-            return false;
-        }
-    }
+    std::vector<double> x(n, 0.0);
+    std::vector<double> x_new(n, 0.0);
+
+    int iter = 0;
+    double diff = tol + 1.0;
 
     // Run Gauss-Seidel iterations
-    for (int k = 0; k < max_iter; k++)
+    while (iter < max_iter && diff > tol)
     {
         for (int i = 0; i < n; i++)
         {
@@ -722,10 +711,23 @@ bool gauss_seidel(const std::vector<std::vector<double>> &A, const std::vector<d
             {
                 sum2 += A[i][j] * x[j];
             }
-            x[i] = (b[i] - sum1 - sum2) / A[i][i];
+            x_new[i] = (b[i] - sum1 - sum2) / A[i][i];
         }
+        // Calculate the norm of the difference between x and x_new
+        diff = 0.0;
+        for (int i = 0; i < n; i++)
+        {
+            double abs_diff = std::abs(x_new[i] - x[i]);
+            if (abs_diff > diff)
+            {
+                diff = abs_diff;
+            }
+        }
+        x = x_new;
+        iter++;
     }
-    return true;
+    cerr << "Gauss_seidel: "<< iter <<endl;
+    return x;
 }
 
 // Solve the linear system Ax = b using Jacobi iteration
