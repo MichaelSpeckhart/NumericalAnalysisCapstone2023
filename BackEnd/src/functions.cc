@@ -685,30 +685,19 @@ pair<std::vector<std::vector<double>>, std::vector<double>> ldlt_factorization(s
 // Solves Ax = b using Gauss-Seidel method
 // A is the matrix and b is the right-hand side vector
 // x is the initial guess for the solution and max_iter is the maximum number of iterations
-// Returns true if successful, false otherwise
-bool gauss_seidel(const std::vector<std::vector<double>> &A, const std::vector<double> &b, std::vector<double> &x, const int max_iter)
+// Returns solution to the system
+std::vector<double> gauss_seidel(const std::vector<std::vector<double>> &A, const std::vector<double> &b, const double tol,const int max_iter)
 {
     const int n = A.size();
 
-    // Check for diagonally dominance
-    for (int i = 0; i < n; i++)
-    {
-        double sum = 0;
-        for (int j = 0; j < n; j++)
-        {
-            if (i != j)
-            {
-                sum += std::abs(A[i][j]);
-            }
-        }
-        if (std::abs(A[i][i]) < sum)
-        {
-            return false;
-        }
-    }
+    std::vector<double> x(n, 0.0);
+    std::vector<double> x_new(n, 0.0);
+
+    int iter = 0;
+    double diff = tol + 1.0;
 
     // Run Gauss-Seidel iterations
-    for (int k = 0; k < max_iter; k++)
+    while (iter < max_iter && diff > tol)
     {
         for (int i = 0; i < n; i++)
         {
@@ -722,10 +711,23 @@ bool gauss_seidel(const std::vector<std::vector<double>> &A, const std::vector<d
             {
                 sum2 += A[i][j] * x[j];
             }
-            x[i] = (b[i] - sum1 - sum2) / A[i][i];
+            x_new[i] = (b[i] - sum1 - sum2) / A[i][i];
         }
+        // Calculate the norm of the difference between x and x_new
+        diff = 0.0;
+        for (int i = 0; i < n; i++)
+        {
+            double abs_diff = std::abs(x_new[i] - x[i]);
+            if (abs_diff > diff)
+            {
+                diff = abs_diff;
+            }
+        }
+        x = x_new;
+        iter++;
     }
-    return true;
+    cerr << "Gauss_seidel: "<< iter <<endl;
+    return x;
 }
 
 // Solve the linear system Ax = b using Jacobi iteration
@@ -1061,9 +1063,9 @@ void ilu(std::vector<std::vector<double>> &A, const int p)
     }
 }
 
-// Perform ILUT factorization in-place
+// Perform ILUT(0) factorization in-place
 // A is a square matrix of size n x n to be factored
-void ilut(std::vector<std::vector<double>> &A, int p, double tau)
+void ilut(std::vector<std::vector<double>> &A, double tau)
 {   
     const size_t n = A.size();
     if (n != A[0].size())
@@ -1100,8 +1102,95 @@ void ilut(std::vector<std::vector<double>> &A, int p, double tau)
                 A[i][j] = 0;
             }
         }
-        // TODO: Keep only the p largest elements of L[i] and U[i]
     }    
+}
+
+
+// dot product of two vectors
+double dot(const std::vector<double> &x, const std::vector<double> &y)
+{
+    const size_t n = x.size();
+    double sum = 0.0;
+    for (size_t i = 0; i < n; i++)
+    {
+        sum += x[i] * y[i];
+    }
+    return sum;
+}
+
+// left multiply a matrix by a vector
+std::vector<double> left_mult_vector(const std::vector<std::vector<double>> &A, const std::vector<double> &x)
+{
+    const size_t n = A.size();
+    std::vector<double> y(n, 0.0);
+    for (size_t i = 0; i < n; i++)
+    {
+        y[i] = dot(A[i], x);
+    }
+    return y;
+}
+
+// GCR method solves Ax = b
+// A is the matrix and b is the right-hand side vector
+// x is the initial guess for the solution
+// max_iter is the maximum number of iterations to perform
+// tol is the tolerance for convergence
+// Return the solution x as a vector of length n
+std::vector<double> gcr(const std::vector<std::vector<double>> &A,
+                        const std::vector<double> &b,
+                        std::vector<double> &x,
+                        const double tol,
+                        const int max_iter)
+
+{
+    const size_t n = A.size();
+    std::vector<double> r(n, 0);
+    std::vector<std::vector<double>> p, beta;
+    // r = b - Ax
+    r = b;
+    for (size_t i = 0; i < n; i++)
+    {
+        r[i] -= dot(A[i], x);
+    }
+    // p_0 = r
+    p.push_back(r);
+    for (int j = 0; j < max_iter; j++)
+    {   
+        // Check for convergence
+        double norm_r = sqrt(dot(r, r));
+        if (norm_r < tol)
+        {
+            return x;
+        }
+        // A*p
+        std::vector<double> Ap = left_mult_vector(A, p[j]);
+        // alpha = (r, Ap) / (Ap, Ap)
+        double alpha = dot(r, Ap) / dot(Ap, Ap);
+        // x = x + alpha*p and r = r - alpha*Ap
+        // std::vector<double> x_new = x;
+        for (size_t i = 0; i < n; i++)
+        {
+            x[i] += alpha * p[j][i];
+            r[i] -= alpha * Ap[i];
+        }
+        // Compute beta_ij
+        std::vector<double> beta;
+        for (int i=0; i < j; i++) {
+            std::vector<double> Ar = left_mult_vector(A, r);
+            std::vector<double> Api = left_mult_vector(A, p[i]);
+            // beta_ij = (r_new, A*p_i) / (A*p_i, A*p_i)
+            beta.push_back(dot(Ar, Api) / dot(Api, Api));
+        }
+
+        std::vector<double> p_new = r;
+        for (int i=0; i < j; i++) {
+            for (size_t k=0; k < n; k++) {
+                p_new[k] -= beta[i] * p[i][k];
+            }
+        }
+        p.push_back(p_new);
+    }
+    return x;
 }
 
 

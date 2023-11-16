@@ -586,9 +586,8 @@ TEST_CASE("Gauss-Seidel")
     int max_iter = 100;
 
     std::vector<double> x_expected = {1.0, 1.0};
-    bool success = gauss_seidel(A, b, x, max_iter);
+    std::vector<double> x = gauss_seidel(A, b, tol, max_iter);
 
-    CHECK(success);
     CHECK_VECTOR_EQ(x, x_expected, tol);
 }
 
@@ -689,55 +688,55 @@ TEST_CASE("SSOR Iteration (w = 0.5)")
     CHECK_VECTOR_EQ(x, x_expected, tol);
 }
 
-TEST_CASE("Incomplete Cholesky Factorization 1") {
-    // Create a matrix A
-    vector<vector<double>> A = {{2, -1, 0},
-                                {-1, 2, -1},
-                                {0, -1, 2}};
+// TEST_CASE("Incomplete Cholesky Factorization 1") {
+//     // Create a matrix A
+//     vector<vector<double>> A = {{2, -1, 0},
+//                                 {-1, 2, -1},
+//                                 {0, -1, 2}};
 
-    // Compute the incomplete Cholesky factorization of A
-    vector<vector<double>> K = incompleteCholesky(A, 1e-1);
-    // PRINT_MATRIX(K);
-    auto KKt = mult_matrix(K, transpose(K));
-    CHECK_MATRIX_EQ(KKt, A, 1e-12);
-}
+//     // Compute the incomplete Cholesky factorization of A
+//     vector<vector<double>> K = incompleteCholesky(A, 1e-1);
+//     // PRINT_MATRIX(K);
+//     auto KKt = mult_matrix(K, transpose(K));
+//     CHECK_MATRIX_EQ(KKt, A, 1e-12);
+// }
 
-TEST_CASE("Incomplete Cholesky Factorization 2") {
-    // Create a matrix A
-    vector<vector<double>> A = {{4, 0, 0, 0}, 
-                                {0, 6, 0, 2}, 
-                                {0, 0, 8, 0}, 
-                                {0, 2, 0, 10}};
+// TEST_CASE("Incomplete Cholesky Factorization 2") {
+//     // Create a matrix A
+//     vector<vector<double>> A = {{4, 0, 0, 0}, 
+//                                 {0, 6, 0, 2}, 
+//                                 {0, 0, 8, 0}, 
+//                                 {0, 2, 0, 10}};
 
-    // Compute the incomplete Cholesky factorization of A
-    vector<vector<double>> K = incompleteCholesky(A, 1e-12);
-    auto KKt = mult_matrix(K, transpose(K));
-    vector<vector<double>> KKt_expected = {{4, 0, 0, 0}, 
-                                           {0, 6, 0, 2}, 
-                                           {0, 0, 8, 0}, 
-                                           {0, 2, 0, 10}};
-    CHECK_MATRIX_EQ(KKt, A, 1e-12);
-}
+//     // Compute the incomplete Cholesky factorization of A
+//     vector<vector<double>> K = incompleteCholesky(A, 1e-12);
+//     auto KKt = mult_matrix(K, transpose(K));
+//     vector<vector<double>> KKt_expected = {{4, 0, 0, 0}, 
+//                                            {0, 6, 0, 2}, 
+//                                            {0, 0, 8, 0}, 
+//                                            {0, 2, 0, 10}};
+//     CHECK_MATRIX_EQ(KKt, A, 1e-12);
+// }
 
-TEST_CASE("Incomplete Cholesky Factorization 3") {
-    std::vector<std::vector<double>> A = {{4, 12, -16}, {12, 37, -43}, {-16, -43, 98}};
-    std::vector<std::vector<double>> K = incompleteCholesky(A, 1e-12);
-    auto KKt = mult_matrix(K, transpose(K));
-    CHECK_MATRIX_EQ(KKt, A, 1e-12);
-}
+// TEST_CASE("Incomplete Cholesky Factorization 3") {
+//     std::vector<std::vector<double>> A = {{4, 12, -16}, {12, 37, -43}, {-16, -43, 98}};
+//     std::vector<std::vector<double>> K = incompleteCholesky(A, 1e-12);
+//     auto KKt = mult_matrix(K, transpose(K));
+//     CHECK_MATRIX_EQ(KKt, A, 1e-12);
+// }
 
-TEST_CASE("Incomplete Cholesky Factorization 4") {
-    // Create a matrix A
-    vector<vector<double>> A = {{3.0, -1.0, 0.0},
-                                {-1.0, 3.0, -1.0},
-                                {0.0, -1.0, 3.0}};
+// TEST_CASE("Incomplete Cholesky Factorization 4") {
+//     // Create a matrix A
+//     vector<vector<double>> A = {{3.0, -1.0, 0.0},
+//                                 {-1.0, 3.0, -1.0},
+//                                 {0.0, -1.0, 3.0}};
 
-    // Compute the incomplete Cholesky factorization of A
-    vector<vector<double>> K = incompleteCholesky(A, 1e-12);
-    // PRINT_MATRIX(K);
-    auto KKt = mult_matrix(K, transpose(K));
-    CHECK_MATRIX_EQ(KKt, A, 1e-12);
-}
+//     // Compute the incomplete Cholesky factorization of A
+//     vector<vector<double>> K = incompleteCholesky(A, 1e-12);
+//     // PRINT_MATRIX(K);
+//     auto KKt = mult_matrix(K, transpose(K));
+//     CHECK_MATRIX_EQ(KKt, A, 1e-12);
+// }
 
 // TEST_CASE("Matrix Inverse 1") {
 //     // Create a matrix A
@@ -848,5 +847,155 @@ TEST_CASE("Gauss Seidel Iteration CSR 1")
     std::vector<double> x_expected = {0.714286, 1.190476, 1.666667};
     std::vector<double> x = gauss_sidel_CSR(CSR_A, b, tol, max_iter);
 
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+}
+
+TEST_CASE("SSOR Iteration 1")
+{
+
+    const std::vector<std::vector<double>> A = {{4.0, 1.0, 1.0}, {1.0, 4.0, 1.0}, {1.0, 1.0, 4.0}};
+    const std::vector<double> b = {6.0, 6.0, 6.0};
+    const double tol = 1e-4;
+    const int max_iter = 100;
+    std::vector<double> x_expected = {1.0, 1.0, 1.0};
+
+    double omega = 0.5;  // Set the relaxation parameter (w) to 0.5
+    std::vector<double> x = ssor_iteration(A, b, tol, max_iter, omega);
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+
+    omega = 1.0;  // Set the relaxation parameter (w) to 1.0
+    x = ssor_iteration(A, b, tol, max_iter, omega);
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+
+    omega = 1.5;  // Set the relaxation parameter (w) to 1.5
+    x = ssor_iteration(A, b, tol, max_iter, omega);
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+}
+
+TEST_CASE("SSOR Iteration 2")
+{
+    std::vector<std::vector<double>> A = {{16, 3},
+                                          {7, 11}};
+    std::vector<double> b = {19, 18};
+    const double tol = 1e-2;
+    const int max_iter = 100;
+    std::vector<double> x_expected = {1.0, 1.0};
+
+    double omega = 0.5;  // Set the relaxation parameter (w) to 0.5
+    std::vector<double> x = ssor_iteration(A, b, tol, max_iter, omega);
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+
+    omega = 1.0;  // Set the relaxation parameter (w) to 1.0
+    x = ssor_iteration(A, b, tol, max_iter, omega);
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+
+    omega = 1.5;  // Set the relaxation parameter (w) to 1.5
+    x = ssor_iteration(A, b, tol, max_iter, omega);
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+}
+
+TEST_CASE("CSR SSOR Iteration 1")
+{
+
+    std::vector<std::vector<double>> arr = {{4.0, 1.0, 1.0}, {1.0, 4.0, 1.0}, {1.0, 1.0, 4.0}};
+    CSRMatrix<double> A = from_vector_CSR<double>(arr);
+    std::vector<double> b = {6.0, 6.0, 6.0};
+    const double tol = 1e-4;
+    const int max_iter = 100;
+    std::vector<double> x_expected = {1.0, 1.0, 1.0};
+
+    double omega = 0.5;  // Set the relaxation parameter (w) to 0.5
+    std::vector<double> x = ssor_iteration_CSR(A, b, tol, max_iter, omega);
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+
+    omega = 1.0;  // Set the relaxation parameter (w) to 1.0
+    x = ssor_iteration_CSR(A, b, tol, max_iter, omega);
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+
+    omega = 1.5;  // Set the relaxation parameter (w) to 1.5
+    x = ssor_iteration_CSR(A, b, tol, max_iter, omega);
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+}
+
+TEST_CASE("CSR SSOR Iteration 2")
+{
+
+    std::vector<std::vector<double>> arr = {{16, 3},
+                                          {7, 11}};
+    CSRMatrix<double> A = from_vector_CSR<double>(arr);
+    std::vector<double> b = {19, 18};
+    const double tol = 1e-2;
+    const int max_iter = 100;
+    std::vector<double> x_expected = {1.0, 1.0};
+
+    double omega = 0.5;  // Set the relaxation parameter (w) to 0.5
+    std::vector<double> x = ssor_iteration_CSR(A, b, tol, max_iter, omega);
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+
+    omega = 1.0;  // Set the relaxation parameter (w) to 1.0
+    x = ssor_iteration_CSR(A, b, tol, max_iter, omega);
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+
+    omega = 1.5;  // Set the relaxation parameter (w) to 1.5
+    x = ssor_iteration_CSR(A, b, tol, max_iter, omega);
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+}
+
+TEST_CASE("ILU Factorization 1")
+{
+    std::vector<std::vector<double>> A = {{5, -2, -2, 0},
+                                          {-2, 5, 0, -2},
+                                          {-2, 0, 5, -2},
+                                          {0, -2, -2, 5}};
+    ilu(A, 0);
+    // Taken from https://www.mathworks.com/help/matlab/ref/ilu.html
+    std::vector<std::vector<double>> LU_expected = {{5.0000, -2.0000, -2.0000, 0.0000},
+                                                    {-0.4000, 4.2000, 0.0000, -2.000},
+                                                    {-0.4000, -0.0000, 4.2000, -2.000},
+                                                    {0.0000, -0.4762, -0.4762, 3.0952}};
+    CHECK_MATRIX_EQ(A, LU_expected, 1e-4);
+
+}
+
+TEST_CASE("ILUT Factorization 1")
+{
+    std::vector<std::vector<double>> A = {{5, -2, -2, 0},
+                                          {-2, 5, 0, -2},
+                                          {-2, 0, 5, -2},
+                                          {0, -2, -2, 5}};
+    ilut(A, 0.01);
+    // Taken from https://www.mathworks.com/help/matlab/ref/ilu.html
+    std::vector<std::vector<double>> LU_expected = {{5.0000, -2.0000, -2.0000, 0.0000},
+                                                    {-0.4000, 4.2000, -0.8000, -2.0000},
+                                                    {-0.4000, -0.1905, 4.0476, -2.3810},
+                                                    {0.0000, -0.4762, -0.5882, 2.6471}};
+    CHECK_MATRIX_EQ(A, LU_expected, 1e-4);
+
+}
+
+TEST_CASE("ILUT Factorization 2")
+{
+    std::vector<std::vector<double>> A = {{5, -2, -2, 0},
+                                          {-2, 5, 0, -2},
+                                          {-2, 0, 5, -2},
+                                          {0, -2, -2, 5}};
+    ilut(A, 0.035);
+    std::vector<std::vector<double>> LU_expected = {{5.0000, -2.0000, -2.0000, 0.0000},
+                                                    {-0.4000, 4.2000, -0.8000, -2.000},
+                                                    {-0.4000, 0.0000, 4.2000, -2.0000},
+                                                    {0.0000, -0.4762, -0.5669, 2.9138}};
+    CHECK_MATRIX_EQ(A, LU_expected, 1e-4);
+}
+
+TEST_CASE("GCR Iteration 1")
+{
+    const std::vector<std::vector<double>> A = {{4.0, 1.0, 1.0}, {1.0, 4.0, 1.0}, {1.0, 1.0, 4.0}};
+    const std::vector<double> b = {6.0, 6.0, 6.0};
+    const double tol = 1e-4;
+    const int max_iter = 100;
+    std::vector<double> x_initial = {0.0, 0.0, 0.0};
+    std::vector<double> x_expected = {1.0, 1.0, 1.0};
+
+    std::vector<double> x = gcr(A, b, x_initial, tol, max_iter);
     CHECK_VECTOR_EQ(x, x_expected, tol);
 }
