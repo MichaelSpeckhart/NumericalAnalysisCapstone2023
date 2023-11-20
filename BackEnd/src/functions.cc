@@ -898,61 +898,6 @@ std::vector<double> ssor_iteration(const std::vector<std::vector<double>> &A,
 //     return L;
 // }
 
-// Solve the linear system Ax = b using SSOR iteration with relaxation parameter omega
-// A is a square matrix of size n x n
-// b is a vector of length n
-// tol is the tolerance for convergence
-// max_iter is the maximum number of iterations to perform
-// omega is the relaxation parameter (0 < omega < 2)
-// Return the solution x as a vector of length n
-std::vector<double> ssor_iteration(const std::vector<std::vector<double>> &A,
-                                   const std::vector<double> &b,
-                                   const double tol,
-                                   const int max_iter,
-                                   const double omega)
-{
-    const int n = A.size();
-    std::vector<double> x(n, 0.0);
-    std::vector<double> x_new(n, 0.0);
-
-    int iter = 0;
-    double diff = tol + 1.0;
-
-    while (iter < max_iter && diff > tol)
-    {
-        // Normally one needs to solve M(x_new - x) = b - Ax using lu_solve where M = (D + omega*L)^-1 * (D + omega*U),
-        // L is the strict lower triangular part of A, U is the strict upper triangular part of A, and D is the diagonal of A.
-        // However, according to https://en.wikipedia.org/wiki/Successive_over-relaxation, we can use forward substitution:
-        for (int i = 0; i < n; i++)
-        {
-            double sum = 0.0;
-            for (int j = 0; j < i; j++)
-            {
-                sum += A[i][j] * x_new[j];
-            }
-            for (int j = i + 1; j < n; j++)
-            {
-                sum += A[i][j] * x[j];
-            }
-            x_new[i] = (1.0 - omega) * x[i] + (omega / A[i][i]) * (b[i] - sum);
-        }
-        // Compute the difference between the new and old iterates
-        diff = 0.0;
-        for (int i = 0; i < n; i++)
-        {
-            double abs_diff = std::abs(x_new[i] - x[i]);
-            if (abs_diff > diff)
-            {
-                diff = abs_diff;
-            }
-        }
-        x = x_new;
-        iter++;
-    }
-
-    return x;
-}
-
 // Perform general ILU factorization in-place:
 // A is a square matrix of size n x n to be factored
 // P is a zero pattern set such that P[i][j] = true if (i, j) belongs to P

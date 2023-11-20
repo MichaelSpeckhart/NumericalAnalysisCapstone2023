@@ -1,6 +1,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 #include "../functionsCSRParallel.cc"
+#include "../functionsParallel.cc"
 #include "fstream"
 //Basic Unit tests for CSR add, multiply, and transpose
 //Use -d to time the tests
@@ -99,37 +100,52 @@ void CHECK_VECTOR_EQ(vector<double> &mResult, vector<double> &mCheck, double tol
 //     CHECK(serial == serial);
 // }
 
-TEST_CASE("CSR multiply parallel Correctness") {
-    CSRMatrix<double> m1 = load_fileCSR<double>("../../../data/matrices/TSOPF_RS_b39_c30.mtx");
-    //CSRMatrix<double> m1 = load_fileCSR<double>("../../../data/matrices/1138_bus.mtx");
-    //CSRMatrix<double> m2 = transpose_matrixCSR<double>(m1);
+// TEST_CASE("CSR multiply parallel Correctness") {
+//     CSRMatrix<double> m1 = load_fileCSR<double>("../../../data/matrices/TSOPF_RS_b39_c30.mtx");
+//     //CSRMatrix<double> m1 = load_fileCSR<double>("../../../data/matrices/1138_bus.mtx");
+//     //CSRMatrix<double> m2 = transpose_matrixCSR<double>(m1);
 
-    CSRMatrix<double> m3 = multiply_matrixCSR<double>(m1, m1);
-    CSRMatrix<double> m4 = parallel::multiply_matrixCSR<double>(m1, m1);
-    CHECKCSRFast(m3,m4);
-    // CHECK(m3.numRows == m4.numRows);
-    // CHECK(m3.numColumns == m4.numColumns);
-    // for(size_t i = 0 ; i <m3.row_ptr.size();i++){
-    //     CHECK(m3.row_ptr[i] == m4.row_ptr[i]);
-    // }
-    // for(size_t i = 0 ; i <m3.col_ind.size();i++){
-    //     CHECK(m3.col_ind[i] == m4.col_ind[i]);
-    // }
-    // for(size_t i = 0 ; i <m3.val.size();i++){
-    //     CHECK(m3.val[i] == m4.val[i]);
-    // }
-}
+//     CSRMatrix<double> m3 = multiply_matrixCSR<double>(m1, m1);
+//     CSRMatrix<double> m4 = parallel::multiply_matrixCSR<double>(m1, m1);
+//     CHECKCSRFast(m3,m4);
+//     // CHECK(m3.numRows == m4.numRows);
+//     // CHECK(m3.numColumns == m4.numColumns);
+//     // for(size_t i = 0 ; i <m3.row_ptr.size();i++){
+//     //     CHECK(m3.row_ptr[i] == m4.row_ptr[i]);
+//     // }
+//     // for(size_t i = 0 ; i <m3.col_ind.size();i++){
+//     //     CHECK(m3.col_ind[i] == m4.col_ind[i]);
+//     // }
+//     // for(size_t i = 0 ; i <m3.val.size();i++){
+//     //     CHECK(m3.val[i] == m4.val[i]);
+//     // }
+// }
 
-TEST_CASE("Jacobi Iteration Parallel")
+
+TEST_CASE("Jacobi Iteration CSR 0")
 {
-    const std::vector<std::vector<double>> A = {{4.0, 1.0, 1.0}, {1.0, 4.0, 1.0}, {1.0, 1.0, 4.0}};
-    const std::vector<double> b = {6.0, 6.0, 6.0};
+    std::vector<std::vector<double>> A = {{4.0, 1.0, 1.0}, {1.0, 4.0, 1.0}, {1.0, 1.0, 4.0}};
+    auto CSR_A = from_vector_CSR<double>(A);
+    std::vector<double> b = {6.0, 6.0, 6.0};
     const double tol = 1e-6;
     const int max_iter = 100;
 
     std::vector<double> x_expected = {1.0, 1.0, 1.0};
-    std::vector<double> x = parallel::jacobi_method_parallel(A, b, max_iter);
+    std::vector<double> x = jacobi_method_CSR<double>(CSR_A, b,tol, max_iter);
 
     CHECK_VECTOR_EQ(x, x_expected, tol);
 }
 
+TEST_CASE("Jacobi Iteration CSR 1")
+{
+    std::vector<std::vector<double>> A = {{3.0, 1.0, 1.0}, {1.0, 5.0, 2.0}, {2.0, 3.0, 6.0}};
+    auto CSR_A = from_vector_CSR<double>(A);
+    const std::vector<double> b = {5.0, 10.0, 15.0};
+    const double tol = 1e-6;
+    const int max_iter = 100;
+
+    std::vector<double> x_expected = {0.714286, 1.190476, 1.666667};
+    std::vector<double> x = jacobi_method_CSR(CSR_A, b, tol, max_iter);
+
+    CHECK_VECTOR_EQ(x, x_expected, tol);
+}

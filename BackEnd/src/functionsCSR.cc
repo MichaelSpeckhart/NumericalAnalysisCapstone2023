@@ -580,7 +580,7 @@ std::vector<T> jacobi_method_CSR(CSRMatrix<T> m1, std::vector<T> B, const double
         xValues = approxValues;
         iterations++;
     
-}
+    }
 return approxValues;
 }
 

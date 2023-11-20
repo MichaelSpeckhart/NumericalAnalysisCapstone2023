@@ -5,3 +5,4 @@ Dockerfile.bash_history
 .viminfo
 .python_history
 .vscode
+/oneapi-tbb-2021.8.0/

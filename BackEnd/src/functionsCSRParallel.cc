@@ -332,54 +332,47 @@ CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
     return returnMatrix;
 }
 
-/// @brief gaussian elimination with forward elimination on a square matrix
-/// @exception The matrix must be square
-/// @param A A dense matrix to eliminate
-/// @return returns true if successful
-bool gaussian_elimination(std::vector<std::vector<double> > &A) {
-    if (A.size() != A[0].size())
-    {
-        throw std::invalid_argument("The matrix must be square.");
-    }
-    //Iterate over each row in the matrix
-    double pivot;
-    timer stopwatch;
-    for(size_t i = 0; i < A.size() - 1; i++){
-        //Pivot will be the diagonal
-        pivot = A[i][i];
-        //stopwatch.elapsed();
-        //Iterate of the remaining row elements
-        tbb::parallel_for( tbb::blocked_range<size_t>(i+1, A[0].size()), [&](tbb::blocked_range<size_t> r){
-            for(size_t j = r.begin(); j < r.end(); j++){
-                A[i][j] /= pivot;
-            }
-        });
-
-        // Do direct assignment for trivial case (self-divide)
-        A[i][i] = 1.0;
-
-        // Eliminate ith element from the jth row
-            tbb::parallel_for( tbb::blocked_range<size_t>(i+1, A.size()), [&](tbb::blocked_range<size_t> r){
-                float scale;
-                for(size_t j = r.begin(); j < r.end(); j++){
-                    // Factor we will use to scale subtraction by
-                    scale = A[j][i];
-
-                    // Iterate over the remaining columns
-                    for(size_t k = i + 1; k < A.size(); k++){
-                        A[j][k] -= A[i][k] * scale;
-                    }
-
-                    // Do direct assignment for trivial case (eliminate position)
-                    A[j][i] = 0;
-                }
-            });
-    }
-    A[A.size()-1][A[0].size()-1] = 1;
-
-    return true;
-}
-
+// /**
+//  * @brief The Jacobi Method is an iterative method for determining the solutions of a strictly
+//  * diagonally dominant matrix A. Through each iteration, the values of x[i] are approximated through
+//  * the formula x[i] = B[i]
+//  * 
+//  * @param denseMatrix 
+//  * @param B 
+//  * @param iterations 
+//  */
+// template <typename T>
+// std::vector<T> jacobi_method(CSRMatrix<T> m1, std::vector<T> B, int maxIterations) {
+//     if (diagonally_dominant(m1) == false) {
+//         throw std::invalid_argument("Input matrix is not diagonally dominant");
+//     }
+//     std::vector<T> xValues(B.size(), 0.0);
+//     std::vector<T> approxValues(B.size(), 0.0);
+//     int iterations = 0;
+//     while (iterations < maxIterations) {
+//         tbb::parallel_for( tbb::blocked_range<size_t>(0, m1.numRows), [&](tbb::blocked_range<size_t> r){
+//         for(size_t i = r.begin(); i < r.end(); i++){
+//             size_t a1 = m1.row_ptr.at(i);
+//             size_t b1 = m1.row_ptr.at(i + 1);
+//             T sum = 0.0;
+//             T diagonal = 0.0;
+//             while(a1 < b1){
+//                 if(m1.col_ind[a1] == i){
+//                     diagonal = m1.val[a1];
+//                 }else{
+//                     sum += m1.val[a1] * xValues[m1.col_ind[a1]];
+//                 }
+//                 a1++;
+//             }
+//             //no devide by zero error becuase of diagonally dominant check
+//             approxValues[i] = (B[i] - sum) / diagonal;
+//             xValues = approxValues;
+//             iterations++;
+//         }});
+    
+// }
+// return approxValues;
+// }
 
 /**
  * @brief The Jacobi Method is an iterative method for determining the solutions of a strictly
@@ -388,17 +381,19 @@ bool gaussian_elimination(std::vector<std::vector<double> > &A) {
  * 
  * @param denseMatrix 
  * @param B 
- * @param iterations 
+ * @param tol - the tolerance for convergence
+ * @param iterations - the maximum number of iterations to perform
  */
 template <typename T>
-std::vector<T> jacobi_method(CSRMatrix<T> m1, std::vector<T> B, int maxIterations) {
+std::vector<T> jacobi_method_CSR(CSRMatrix<T> m1, std::vector<T> B, const double tol,int maxIterations) {
     if (diagonally_dominant(m1) == false) {
         throw std::invalid_argument("Input matrix is not diagonally dominant");
     }
     std::vector<T> xValues(B.size(), 0.0);
     std::vector<T> approxValues(B.size(), 0.0);
     int iterations = 0;
-    while (iterations < maxIterations) {
+    double diff = tol + 1.0;
+    while (iterations < maxIterations && diff > tol) {
         tbb::parallel_for( tbb::blocked_range<size_t>(0, m1.numRows), [&](tbb::blocked_range<size_t> r){
         for(size_t i = r.begin(); i < r.end(); i++){
             size_t a1 = m1.row_ptr.at(i);
@@ -415,12 +410,78 @@ std::vector<T> jacobi_method(CSRMatrix<T> m1, std::vector<T> B, int maxIteration
             }
             //no devide by zero error becuase of diagonally dominant check
             approxValues[i] = (B[i] - sum) / diagonal;
-            xValues = approxValues;
-            iterations++;
+            
         }});
+         // Calculate the norm of the difference between x and x_new
+        diff = 0.0;
+        for (size_t i = 0; i < m1.numRows; i++)
+        {
+            double abs_diff = std::abs(approxValues[i] - xValues[i]);
+            if (abs_diff > diff)
+            {
+                diff = abs_diff;
+            }
+        }
+        xValues = approxValues;
+        iterations++;
     
-}
+    }
+cerr << "Jacobi Itertions: "<< iterations <<endl;
 return approxValues;
+}
+
+/**
+ * @brief CSR Gauss-Seidel Method. Similar to the Jacobi method however we update the X vector directly
+ * instead
+ * 
+ * @tparam T 
+ * @param m1 
+ * @param B 
+ * @param tol 
+ * @param maxIterations 
+ * @return std::vector<T> 
+ */
+template <typename T>
+std::vector<T> gauss_sidel_CSR(CSRMatrix<T> m1, std::vector<T> B, const double tol,int maxIterations) {
+    // if (diagonally_dominant(m1) == false) {
+    //     throw std::invalid_argument("Input matrix is not diagonally dominant");
+    // }
+    std::vector<T> xValues(B.size(), 0.0);
+    std::vector<T> approxValues(B.size(), 0.0);
+    int iterations = 0;
+    double diff = tol + 1.0;
+    while (iterations < maxIterations && diff > tol) {
+        for (size_t i = 0; i < m1.numRows; ++i) {
+            size_t a1 = m1.row_ptr.at(i);
+            size_t b1 = m1.row_ptr.at(i + 1);
+            T sum = 0.0;
+            T diagonal = 0.0;
+            while(a1 < b1){
+                if(m1.col_ind[a1] == i){
+                    diagonal = m1.val[a1];
+                }else{
+                    sum += m1.val[a1] * xValues[m1.col_ind[a1]];
+                }
+                a1++;
+            }
+            //no divide by zero error becuase of diagonally dominant check
+            approxValues[i] = (B[i] - sum) / diagonal;
+            
+        }
+        diff = 0.0;
+        for (int i = 0; i < m1.numRows; i++)
+        {
+            T abs_diff = std::abs(approxValues[i] - xValues[i]);
+            if (abs_diff > diff)
+            {
+                diff = abs_diff;
+            }
+        }
+        xValues = approxValues;
+        iterations++;
+    }
+    //cerr << "Gauss Sidel Sparse Itertions: "<< iterations <<endl;
+    return xValues;
 }
 
 }
