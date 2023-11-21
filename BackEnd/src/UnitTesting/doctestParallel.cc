@@ -211,7 +211,7 @@ TEST_CASE("SSOR (W = 0.5) CSR 0")
     std::vector<double> b = {6.0, 6.0, 6.0};
     const double tol = 1e-6;
     const int max_iter = 100;
-    const double omega = 0.5;  // Set the relaxation parameter (w) to 1.0
+    const double omega = 0.5;  // Set the relaxation parameter (w) to 0.5
 
     std::vector<double> x_expected = {1.0, 1.0, 1.0};
     std::vector<double> x = parallel::ssor_iteration_CSR<double>(CSR_A, b,tol, max_iter,omega);
@@ -224,7 +224,7 @@ TEST_CASE("SSOR (W = 0.5) CSR 1")
     const std::vector<double> b = {5.0, 10.0, 15.0};
     const double tol = 1e-6;
     const int max_iter = 100;
-    const double omega = 0.5;  // Set the relaxation parameter (w) to 1.0
+    const double omega = 0.5;  // Set the relaxation parameter (w) to 0.5
 
     std::vector<double> x_expected = {0.714286, 1.190476, 1.666667};
     std::vector<double> x = parallel::ssor_iteration_CSR<double>(CSR_A, b,tol, max_iter,omega);
@@ -237,7 +237,7 @@ TEST_CASE("SSOR (W = 1.5) CSR 0")
     std::vector<double> b = {6.0, 6.0, 6.0};
     const double tol = 1e-6;
     const int max_iter = 100;
-    const double omega = 1.5;  // Set the relaxation parameter (w) to 1.0
+    const double omega = 1.5;  // Set the relaxation parameter (w) to 1.5
 
     std::vector<double> x_expected = {1.0, 1.0, 1.0};
     std::vector<double> x = parallel::ssor_iteration_CSR<double>(CSR_A, b,tol, max_iter,omega);
@@ -250,7 +250,7 @@ TEST_CASE("SSOR (W = 1.5) CSR 1")
     const std::vector<double> b = {5.0, 10.0, 15.0};
     const double tol = 1e-6;
     const int max_iter = 100;
-    const double omega = 1.5;  // Set the relaxation parameter (w) to 1.0
+    const double omega = 1.5;  // Set the relaxation parameter (w) to 1.5
 
     std::vector<double> x_expected = {0.714286, 1.190476, 1.666667};
     std::vector<double> x = parallel::ssor_iteration_CSR<double>(CSR_A, b,tol, max_iter,omega);
