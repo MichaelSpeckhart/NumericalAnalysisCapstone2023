@@ -386,9 +386,9 @@ CSRMatrix<T> multiply_matrixCSR(CSRMatrix<T> m1, CSRMatrix<T> m2)
  */
 template <typename T>
 std::vector<T> jacobi_method_CSR(CSRMatrix<T> m1, std::vector<T> B, const double tol,int maxIterations) {
-    if (diagonally_dominant(m1) == false) {
-        throw std::invalid_argument("Input matrix is not diagonally dominant");
-    }
+    // if (diagonally_dominant(m1) == false) {
+    //     throw std::invalid_argument("Input matrix is not diagonally dominant");
+    // }
     std::vector<T> xValues(B.size(), 0.0);
     std::vector<T> approxValues(B.size(), 0.0);
     int iterations = 0;
@@ -426,7 +426,6 @@ std::vector<T> jacobi_method_CSR(CSRMatrix<T> m1, std::vector<T> B, const double
         iterations++;
     
     }
-cerr << "Jacobi Itertions: "<< iterations <<endl;
 return approxValues;
 }
 
@@ -451,7 +450,8 @@ std::vector<T> gauss_sidel_CSR(CSRMatrix<T> m1, std::vector<T> B, const double t
     int iterations = 0;
     double diff = tol + 1.0;
     while (iterations < maxIterations && diff > tol) {
-        for (size_t i = 0; i < m1.numRows; ++i) {
+        tbb::parallel_for( tbb::blocked_range<size_t>(0, m1.numRows), [&](tbb::blocked_range<size_t> r){
+        for(size_t i = r.begin(); i < r.end(); i++){
             size_t a1 = m1.row_ptr.at(i);
             size_t b1 = m1.row_ptr.at(i + 1);
             T sum = 0.0;
@@ -467,9 +467,9 @@ std::vector<T> gauss_sidel_CSR(CSRMatrix<T> m1, std::vector<T> B, const double t
             //no divide by zero error becuase of diagonally dominant check
             approxValues[i] = (B[i] - sum) / diagonal;
             
-        }
+        }});
         diff = 0.0;
-        for (int i = 0; i < m1.numRows; i++)
+        for (size_t i = 0; i < m1.numRows; i++)
         {
             T abs_diff = std::abs(approxValues[i] - xValues[i]);
             if (abs_diff > diff)

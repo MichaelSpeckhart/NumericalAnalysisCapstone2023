@@ -60,13 +60,14 @@ plt.plot(size, gauss_elimination, '--s', label="DENSE Gauss Eliminaton", color='
 
 # Add axis labels and title
 plt.xlabel('Size of Coefficient Matrix')
-plt.ylabel('Execution Time (s)')
+plt.ylabel('Log Execution Time (s)')
 plt.suptitle("Sparse Vs. Dense Data Structure")
 plt.title("A is Tridiagonal, B is First Canonical Basis Vector")
 
 # Add gridlines and legend
 plt.grid(False)
 plt.legend(loc='upper left')
+plt.yscale("log")   
 
 # Save the plot to the 'graphs' folder with the name 'plot.png'
 plt.savefig('graphs/SparseVsDenseSolvers.png', dpi=600)

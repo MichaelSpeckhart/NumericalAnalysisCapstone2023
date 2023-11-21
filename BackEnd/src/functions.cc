@@ -984,13 +984,13 @@ void ilu(std::vector<std::vector<double>> &A, const int p)
             }
         }
     }
-    for (int i = 1; i < n; i++) {
-        for (int k = 0; k < i; k++) {
+    for (size_t i = 1; i < n; i++) {
+        for (size_t k = 0; k < i; k++) {
             if (A[i][k] > p) {
                 continue;
             }
             A[i][k] = A[i][k] / A[k][k];
-            for (int j = k + 1; j < n; j++) {
+            for (size_t j = k + 1; j < n; j++) {
                 if (level[i][j] > p) {
                     continue;
                 }
@@ -1000,7 +1000,7 @@ void ilu(std::vector<std::vector<double>> &A, const int p)
                 }
             }
         }
-        for (int j=0; j < n; j++) {
+        for (size_t j=0; j < n; j++) {
             if (level[i][j] > p) {
                 A[i][j] = 0;
             }
@@ -1026,9 +1026,9 @@ void ilut(std::vector<std::vector<double>> &A, double tau)
         norms[i] = sqrt(norms[i]);
     }
 
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         double tau_i = tau * norms[i];
-        for (int k = 0; k < i; k++) {
+        for (size_t k = 0; k < i; k++) {
             if (A[i][k] != 0) {
                 A[i][k] = A[i][k] / A[k][k];
                 // First dropping rule
@@ -1036,13 +1036,13 @@ void ilut(std::vector<std::vector<double>> &A, double tau)
                     A[i][k] = 0;
                     continue;
                 }
-                for (int j = k+1 ; j < n; j++) {
+                for (size_t j = k+1 ; j < n; j++) {
                     A[i][j] -= A[i][k] * A[k][j];
                 }
             }
         }
         // Second dropping rule
-        for (int j = 0; j < n; j++) {
+        for (size_t j = 0; j < n; j++) {
             if (abs(A[i][j]) < tau_i) {
                 A[i][j] = 0;
             }
