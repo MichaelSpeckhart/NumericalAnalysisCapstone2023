@@ -102,3 +102,63 @@ plt.legend(loc='upper left')
 
 # Save the plot to the 'graphs' folder with the name 'plot.png'
 plt.savefig('graphs/SparseSolvers.png', dpi=600)
+#THREADS
+threads = [1,2,3,4,5,6,7,8]
+
+jacobiParallel = [1.90347,1.02416,0.73991,0.640031,0.606254,0.599996,0.599924,0.605556]
+jacobiSerial = [1.71814,1.71814,1.71814,1.71814,1.71814,1.71814,1.71814,1.71814]
+Gauss_sidel_Parallel = [1.89948,1.01479,0.730396,0.641583,0.601846,0.600159,0.599349,0.60589,]
+Gauss_sidel_Serial = [1.70271,1.70271,1.70271,1.70271,1.70271,1.70271,1.70271,1.70271]
+SSOR_Parallel = [ 1.71467,0.921314,0.682119,0.617948,0.592276,0.59818,0.597187,0.603722]
+SSOR_Serial = [1.78209,1.78209,1.78209,1.78209,1.78209,1.78209,1.78209,1.78209]
+
+#Set the figure size and font size
+plt.figure(figsize=(6, 4))
+plt.rcParams.update({'font.size': 10})
+
+# Plot the data with a solid line and marker
+plt.plot(threads, jacobiParallel, ':^', label="Parallel Sparse Jacobi", color='orange', markersize=8, linewidth=2)
+plt.plot(threads, jacobiSerial, '-o', label="Sparse Jacobi", color='red', markersize=8, linewidth=2)
+plt.plot(threads, Gauss_sidel_Parallel, '-.D', label="Parallel Sparse Gauss Sidel", color='blue', markersize=8, linewidth=2)
+plt.plot(threads, Gauss_sidel_Serial, '--s', label="Sparse Gauss Sidel", color='green', markersize=8, linewidth=2)
+plt.plot(threads, SSOR_Parallel, ':*', label="Parallel Sparse SSOR (W = 0.5)", color='purple', markersize=8, linewidth=2)
+plt.plot(threads, SSOR_Serial, '-.+', label="Sparse SSOR (W = 0.5)", color='yellow', markersize=8, linewidth=2)
+
+# Add axis labels and title
+plt.xlabel('Threads')
+plt.ylabel('Execution Time (s)')
+plt.suptitle("Number of Threads Vs. Execution Time")
+plt.title("1000 iterations on Thread Matrix (NNZ = 4,444,880)")
+
+# Add gridlines and legend
+plt.grid(False)
+plt.legend(loc='best')
+
+# Save the plot to the 'graphs' folder with the name 'plot.png'
+plt.savefig('graphs/ThreadsIterativeSolvers.png', dpi=600)
+
+threads = [1,2,3,4,5,6,7,8]
+
+multParallel = [0.591281,0.310774,0.212397,0.166407,0.134634,0.11685,0.098649,0.0895234]
+multSerial = [0.542035,0.542035,0.542035,0.542035,0.542035,0.542035,0.542035,0.542035]
+
+#Set the figure size and font size
+plt.figure(figsize=(6, 4))
+plt.rcParams.update({'font.size': 10})
+
+# Plot the data with a solid line and marker
+plt.plot(threads, multParallel, '-o', label="Parallel Sparse Matrix Multiplication", color='red', markersize=8, linewidth=2)
+plt.plot(threads, multSerial, '-.D', label="Sparse Matrix Multiplication", color='blue', markersize=8, linewidth=2)
+
+# Add axis labels and title
+plt.xlabel('Threads')
+plt.ylabel('Execution Time (s)')
+plt.suptitle("Number of Threads Vs. Execution Time")
+plt.title("s3rmt3m3 ^2 (NNZ = 207,123)")
+
+# Add gridlines and legend
+plt.grid(False)
+plt.legend(loc='best')
+
+# Save the plot to the 'graphs' folder with the name 'plot.png'
+plt.savefig('graphs/ThreadsSparseMultiplication.png', dpi=600)
