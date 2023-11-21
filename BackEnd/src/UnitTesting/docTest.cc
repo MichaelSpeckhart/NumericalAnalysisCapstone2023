@@ -999,3 +999,34 @@ TEST_CASE("GCR Iteration 1")
     std::vector<double> x = gcr(A, b, x_initial, tol, max_iter);
     CHECK_VECTOR_EQ(x, x_expected, tol);
 }
+
+TEST_CASE("Matrix-vector product CSR 0") {
+    std::vector<std::vector<double>> A =    {{3.0, 1.0, 1.0, 2.0}, 
+                                            {1.0, 5.0, 2.0, 4.0}, 
+                                            {2.0, 3.0, 6.0, 3.0}, 
+                                            {8.0, 1.0, 1.0, 2.0}};
+    auto CSR_A = from_vector_CSR<double>(A);
+    std::vector<double> b = {5.0, 10.0, 15.0, 9.0};
+    std::vector<double> result = matrix_vector_product_CSR(CSR_A, b);
+    std::vector<double> expected = {58.0, 121.0, 157.0, 83.0};
+
+    std::cout << "Result size " << result.size() << std::endl;
+
+    CHECK_VECTOR_EQ(result, expected, 1e-6);
+}
+
+TEST_CASE("Conjugate Gradient CSR 0") {
+    std::vector<std::vector<double>> A = { {2, -1, 0, 0},
+                                           {-1, 2, -1, 0},
+                                           {0, -1, 2, -1},
+                                           {0, 0, -1, 2}};
+    auto CSR_A = from_vector_CSR<double>(A);
+    std::vector<double> b = {5.0, 10.0, 15.0, 9.0};
+    std::vector<double> x0 = {0.0, 0.0, 0.0, 0.0};
+
+    auto result = conjugate_gradient_CSR(CSR_A, b, x0, 100, 1e-6);
+
+    std::vector<double> expected = {17.8000, 30.6000, 33.4000, 21.2000 };
+
+    CHECK_VECTOR_EQ(result, expected, 1e-6);
+}

@@ -713,3 +713,141 @@ template <typename T>
         }
     }
 
+/**
+ * @brief Matrix-vector product function
+ * 
+ * @tparam T 
+ * @param m1 
+ * @param v 
+ * @return std::vector<T> 
+ */
+template <typename T>
+    std::vector<T> matrix_vector_product_CSR(CSRMatrix<T> m1, std::vector<T> v) {
+        std::vector<T> result(m1.numRows, 0.0);
+
+        for (size_t i = 0; i < m1.numRows; ++i) {
+            size_t row_start = m1.row_ptr[i];
+            size_t row_end = m1.row_ptr[i + 1];
+            for (size_t j = row_start; j < row_end; ++j) {
+                size_t col_index = m1.col_ind[j];
+                T value = m1.val[j];
+                result[i] = result[i] + (value * v[col_index]);
+            }
+        }
+        return result;
+    }
+
+
+/**
+ * @brief Vector dot products return the scalar
+ * 
+ * @tparam T 
+ * @param a 
+ * @param b 
+ * @return T 
+ */
+template <typename T>
+    T vector_vector_product(std::vector<T> a, std::vector<T> b) {
+        T result = 0.0;
+        size_t n = a.size();
+        for (size_t i = 0; i < n; ++i) {
+            result += a[i] * b[i];
+        }
+
+        return result;
+
+    }
+
+/**
+ * @brief Finding a linear combination of two vectors with two scalars
+ * Needed for CG
+ * @tparam T 
+ * @param a 
+ * @param b 
+ * @param scalar1 
+ * @param scalar2 
+ * @return std::vector<T> 
+ */
+template <typename T>
+    std::vector<T> vector_combination(std::vector<T> a, std::vector<T> b, double scalar1, double scalar2) {
+        size_t n = a.size();
+        std::vector<T> result(n);
+        for (size_t i = 0; i < n; ++i) {
+            result[i] = (scalar1 * a[i]) + (scalar2 * b[i]);
+        }
+
+        return result;
+    }
+
+/**
+ * @brief Take the inner product of two vectors
+ * 
+ * @tparam T 
+ * @param U 
+ * @param V 
+ * @return T 
+ */
+template <typename T>
+    T vector_inner_product(std::vector<T> &U, std::vector<T> &V )  {
+        return inner_product( U.begin(), U.end(), V.begin(), 0.0 );
+    }
+
+/**
+ * @brief Find the norm of vector
+ * 
+ * @tparam T 
+ * @param a 
+ * @return T 
+ */
+template <typename T>
+    T vector_norm(std::vector<T> a) {
+        return std::sqrt(std::inner_product(a.begin(), a.end(), a.begin(), 0.0));
+    }
+
+
+
+/**
+ * @brief Conjugate Gradient for CSR
+ * 
+ * @tparam T 
+ * @param A 
+ * @param b 
+ * @param x0 
+ * @param maxit 
+ * @param tol 
+ * @return std::vector<T> 
+ */
+template <typename T>
+    std::vector<T> conjugate_gradient_CSR(CSRMatrix<T> A, 
+                                          std::vector<T> b, 
+                                          std::vector<T> x0, 
+                                          int maxit, 
+                                          double tol) {
+        int i = 1;
+        std::vector<T> r = b;
+        std::vector<T> p = r;
+        std::vector<T> x(4, 0.0);
+
+        while (i < maxit) {
+            std::vector<T> r_old = r;
+            std::vector<T> Ap = matrix_vector_product_CSR(A, p);
+
+            double alpha = vector_inner_product(r, r) /
+                            std::max(vector_inner_product(p, Ap), 1e-6);
+
+            x = vector_combination(x, p, 1.0, alpha);
+            r = vector_combination(r, Ap, 1.0, -alpha);
+            std::cout << "Norm of the residual: " << vector_norm(r) << std::endl;
+            if (vector_norm(r) < tol)
+                break;
+            
+            double beta = vector_inner_product(r, r) /
+                            std::max(vector_inner_product(r_old, r_old), 1e-6);
+            p = vector_combination(r, p, 1.0, beta);
+            i++;
+
+        }
+        std::cout << "Iterations: " << i << "\n";
+        return x;
+}
+
