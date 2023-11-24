@@ -705,7 +705,7 @@ std::vector<double> gauss_seidel(const std::vector<std::vector<double>> &A, cons
             double sum2 = 0;
             for (int j = 0; j < i; j++)
             {
-                sum1 += A[i][j] * x[j];
+                sum1 += A[i][j] * x_new[j];
             }
             for (int j = i + 1; j < n; j++)
             {
