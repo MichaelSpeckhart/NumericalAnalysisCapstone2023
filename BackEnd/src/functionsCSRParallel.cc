@@ -460,7 +460,8 @@ std::vector<T> gauss_sidel_CSR(CSRMatrix<T> m1, std::vector<T> B, const double t
                 if(m1.col_ind[a1] == i){
                     diagonal = m1.val[a1];
                 }else{
-                    sum += m1.val[a1] * xValues[m1.col_ind[a1]];
+                    //NOTE THAT approxValues has the new values above i and the old values below i. THIS IS A RACE CONDITION
+                    sum += m1.val[a1] * approxValues[m1.col_ind[a1]];
                 }
                 a1++;
             }

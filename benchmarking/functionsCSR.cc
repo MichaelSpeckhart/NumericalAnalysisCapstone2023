@@ -607,7 +607,7 @@ std::vector<T> gauss_sidel_CSR(CSRMatrix<T> m1, std::vector<T> B, const double t
     std::vector<T> approxValues(B.size(), 0.0);
     int iterations = 0;
     double diff = tol + 1.0;
-    while (iterations < maxIterations && diff > tol) {
+    while (iterations < maxIterations  && diff > tol) {
         for (size_t i = 0; i < m1.numRows; ++i) {
             size_t a1 = m1.row_ptr.at(i);
             size_t b1 = m1.row_ptr.at(i + 1);
@@ -617,7 +617,8 @@ std::vector<T> gauss_sidel_CSR(CSRMatrix<T> m1, std::vector<T> B, const double t
                 if(m1.col_ind[a1] == i){
                     diagonal = m1.val[a1];
                 }else{
-                    sum += m1.val[a1] * xValues[m1.col_ind[a1]];
+                    //NOTE THAT approxValues has the new values above i and the old values below i
+                    sum += m1.val[a1] * approxValues[m1.col_ind[a1]];
                 }
                 a1++;
             }
@@ -688,7 +689,7 @@ std::vector<T> ssor_iteration_CSR(CSRMatrix<T> A,
         x = x_new;
         iter++;
     }
-    cerr << "SSOR Sparse Itertions: "<< iter <<endl;
+    //cerr << "SSOR Sparse Itertions: "<< iter <<endl;
     return x;
 }
 
@@ -788,61 +789,68 @@ void compareVector(vector<double> &A, vector<double> &B, double error) {
                 cerr<< "NOT THE SAME " <<endl;
             }
         }
+    cerr << "THE SAME!" << endl;
 }
 
-int main() {
-    std::string to_load = "bcsstk10.mtx";
-    CSRMatrix<double> A_CSR = load_fileCSR<double>(to_load);
-    vector<vector<double>> A = load_fileMatrix<double>(to_load);
-    vector<double> B(A_CSR.numRows, 0);
-    B[0] = 1.0;
-    timer stopwatch;
+// int main() {
+//     // std::string to_load = "s3rmt3m3.mtx";
+//     // CSRMatrix<double> A_CSR = load_fileCSR<double>(to_load);
+//     // vector<vector<double>> A = load_fileMatrix<double>(to_load);
+//     // vector<double> B(A_CSR.numRows, 0);
+//     // B[0] = 1.0;
+//     timer stopwatch;
 
-    // stopwatch.elapsed();
-    // gcr(A,B,1e-6,1000);
-    // cerr << "GCR TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl <<endl;
+//     vector<vector<double>> A = {{4,1,-1},{2,7,2},{-3,2,5}};
+//     vector<double> B = {8,18,15};
+//     CSRMatrix<double> A_CSR = from_vector_CSR<double>(A);
 
-    stopwatch.elapsed();
-    jacobi_iteration(A,B,1e-16,1000);
-    cerr << "Jacobi TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl;
-    stopwatch.elapsed();
-    jacobi_method_CSR<double>(A_CSR,B,1e-16,1000);
-    cerr << "Jacobi CSR TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl <<endl;
+//     // stopwatch.elapsed();
+//     // gcr(A,B,1e-6,1000);
+//     // cerr << "GCR TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl <<endl;
+
+//     // stopwatch.elapsed();
+//     jacobi_iteration(A,B,1e-16,1000);
+//     // cerr << "Jacobi TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl;
+//     // // stopwatch.elapsed();
+//     jacobi_method_CSR<double>(A_CSR,B,1e-16,1000);
+//     // // cerr << "Jacobi CSR TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl <<endl;
 
 
-    stopwatch.elapsed();
-    gauss_seidel(A,B,1e-16,1000);
-    cerr << "Gauss_seidel TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl;
-    stopwatch.elapsed();
-    gauss_sidel_CSR<double>(A_CSR,B,1e-16,1000);
-    cerr << "Gauss Seidel CSR TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl <<endl;
+//     // stopwatch.elapsed();
+//     auto y =gauss_seidel(A,B,1e-16,1000);
+//     cerr << "Gauss_seidel TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl;
+//     stopwatch.elapsed();
+//     auto x =gauss_sidel_CSR<double>(A_CSR,B,1e-16,1000);
+//     // cerr << "Gauss Seidel CSR TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl <<endl;
 
-    stopwatch.elapsed();
-    ssor_iteration(A,B,1e-16,1000,0.5);
-    cerr << "SSOR w = 0.5 TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl;
-    stopwatch.elapsed();
-    ssor_iteration_CSR<double>(A_CSR,B,1e-16,1000,0.5);
-    cerr << "SSOR w = 0.5 CSR TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl <<endl;
+//     // stopwatch.elapsed();
+//     // ssor_iteration(A,B,1e-16,1000,0.5);
+//     // cerr << "SSOR w = 0.5 TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl;
+//     // stopwatch.elapsed();
+//     // parallel::ssor_iteration_CSR<double>(A_CSR,B,1e-16,1000,0.5);
+//     // cerr << "SSOR w = 0.5 CSR TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl <<endl;
 
-    // stopwatch.elapsed();
-    // ssor_iteration(A,B,1e-16,1000,1.5);
-    // cerr << "SSOR w = 1.5 TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl;
-    // stopwatch.elapsed();
-    // ssor_iteration_CSR<double>(A_CSR,B,1e-16,1000,1.5);
-    // cerr << "SSOR w = 1.5 CSR TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl <<endl;
+//     // stopwatch.elapsed();
+//     // ssor_iteration(A,B,1e-16,1000,1.5);
+//     // cerr << "SSOR w = 1.5 TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl;
+//     // stopwatch.elapsed();
+//     // ssor_iteration_CSR<double>(A_CSR,B,1e-16,1000,1.5);
+//     // cerr << "SSOR w = 1.5 CSR TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl <<endl;
 
-    // stopwatch.elapsed();
-    // ssor_iteration(A,B,1e-16,1000,2.0);
-    // cerr << "SSOR w = 2.0 TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl;
-    // stopwatch.elapsed();
-    // ssor_iteration_CSR<double>(A_CSR,B,1e-16,1000,2.0);
-    // cerr << "SSOR w = 2.0 CSR TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl <<endl;
+//     // stopwatch.elapsed();
+//     // ssor_iteration(A,B,1e-16,1000,2.0);
+//     // cerr << "SSOR w = 2.0 TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl;
+//     // stopwatch.elapsed();
+//     // ssor_iteration_CSR<double>(A_CSR,B,1e-16,1000,2.0);
+//     // cerr << "SSOR w = 2.0 CSR TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl <<endl;
 
-    stopwatch.elapsed();
-    gaussian_elimination(A,B);
-    cerr << "Gauss Elimination TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl;
-    return 0;
-}
+//     // stopwatch.elapsed();
+//     gaussian_elimination(A,B);
+//     cerr << "Gauss Elimination TIME RESULTS SECONDS: "<< stopwatch.elapsed() <<endl;
+//     compareVector(x,B,1e-9);
+//     compareVector(y,B,1e-9);
+//     return 0;
+// }
 // int main() {
 //     // size_t N = 10;
 //     // vector<vector<double>> A(N, vector<double>(N, 0.0));
