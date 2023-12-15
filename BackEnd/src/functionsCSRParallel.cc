@@ -429,6 +429,20 @@ std::vector<T> jacobi_method_CSR(CSRMatrix<T> m1, std::vector<T> B, const double
 return approxValues;
 }
 
+template <typename T>
+struct AtomicVector {
+    std::vector<std::atomic<T>> data;
+
+    AtomicVector(size_t size) : data(size) {}
+
+    void atomic_update(size_t index, T value) {
+        data[index].store(value, std::memory_order_relaxed);
+    }
+
+    T operator[](size_t index) const {
+        return data[index].load(std::memory_order_relaxed);
+    }
+};
 /**
  * @brief CSR Gauss-Seidel Method. Similar to the Jacobi method however we update the X vector directly
  * instead
@@ -441,47 +455,52 @@ return approxValues;
  * @return std::vector<T> 
  */
 template <typename T>
-std::vector<T> gauss_sidel_CSR(CSRMatrix<T> m1, std::vector<T> B, const double tol,int maxIterations) {
-    // if (diagonally_dominant(m1) == false) {
-    //     throw std::invalid_argument("Input matrix is not diagonally dominant");
-    // }
+std::vector<T> gauss_sidel_CSR(CSRMatrix<T> m1, std::vector<T> B, const double tol, int maxIterations) {
     std::vector<T> xValues(B.size(), 0.0);
-    std::vector<T> approxValues(B.size(), 0.0);
+    AtomicVector<T> approxValues(B.size());
+
     int iterations = 0;
     double diff = tol + 1.0;
+
     while (iterations < maxIterations && diff > tol) {
-        tbb::parallel_for( tbb::blocked_range<size_t>(0, m1.numRows), [&](tbb::blocked_range<size_t> r){
-        for(size_t i = r.begin(); i < r.end(); i++){
-            size_t a1 = m1.row_ptr.at(i);
-            size_t b1 = m1.row_ptr.at(i + 1);
-            T sum = 0.0;
-            T diagonal = 0.0;
-            while(a1 < b1){
-                if(m1.col_ind[a1] == i){
-                    diagonal = m1.val[a1];
-                }else{
-                    //NOTE THAT approxValues has the new values above i and the old values below i. THIS IS A RACE CONDITION
-                    sum += m1.val[a1] * approxValues[m1.col_ind[a1]];
+        tbb::parallel_for(tbb::blocked_range<size_t>(0, m1.numRows), [&](tbb::blocked_range<size_t> r) {
+            for (size_t i = r.begin(); i < r.end(); i++) {
+                size_t a1 = m1.row_ptr.at(i);
+                size_t b1 = m1.row_ptr.at(i + 1);
+                T sum = 0.0;
+                T diagonal = 0.0;
+
+                while (a1 < b1) {
+                    if (m1.col_ind[a1] == i) {
+                        diagonal = m1.val[a1];
+                    } else {
+                        sum += m1.val[a1] * approxValues[m1.col_ind[a1]];
+                    }
+                    a1++;
                 }
-                a1++;
+
+                T newValue = (B[i] - sum) / diagonal;
+                approxValues.atomic_update(i, newValue);
             }
-            //no divide by zero error becuase of diagonally dominant check
-            approxValues[i] = (B[i] - sum) / diagonal;
-            
-        }});
+        });
+
         diff = 0.0;
-        for (size_t i = 0; i < m1.numRows; i++)
-        {
+
+        for (size_t i = 0; i < m1.numRows; i++) {
             T abs_diff = std::abs(approxValues[i] - xValues[i]);
-            if (abs_diff > diff)
-            {
+            if (abs_diff > diff) {
                 diff = abs_diff;
             }
         }
-        xValues = approxValues;
+
+        for (size_t i = 0; i < xValues.size(); i++) {
+            xValues[i] = approxValues[i];
+        }
+
         iterations++;
     }
-    //cerr << "Gauss Sidel Sparse Itertions: "<< iterations <<endl;
+
+    std::cerr << "Gauss Sidel PARALLEL Sparse Iterations: " << iterations << std::endl;
     return xValues;
 }
 
