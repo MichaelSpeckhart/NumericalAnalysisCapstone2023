@@ -563,7 +563,7 @@ std::vector<T> jacobi_method_CSR(CSRMatrix<T> m1, std::vector<T> B, const double
                 }
                 a1++;
             }
-            //no devide by zero error becuase of diagonally dominant check
+            //no divide by zero error because of diagonally dominant check
             approxValues[i] = (B[i] - sum) / diagonal;
             
         }
